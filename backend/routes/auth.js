@@ -1,4 +1,4 @@
-const { ClerkExpressRequireAuth, ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node');
+const { ClerkExpressRequireAuth, ClerkExpressWithAuth, clerkClient } = require('@clerk/clerk-sdk-node');
 const express = require('express');
 const User = require('../models/User');
 const router = express.Router();
@@ -33,16 +33,27 @@ router.get('/profile', (req, res, next) => {
       return res.status(400).json({ message: 'No user ID found in request' });
     }
 
+    // Fetch user data from Clerk
+    console.log('Fetching user data from Clerk...');
+    const clerkUser = await clerkClient.users.getUser(userId);
+    console.log('Clerk user data:', clerkUser);
+
     // Try to find user in DB
     let dbUser = await User.findOne({ clerkId: userId });
     if (!dbUser) {
       console.log('User not found in DB, creating new user...');
+      
+      // Extract user data from Clerk response
+      const email = clerkUser.emailAddresses?.[0]?.emailAddress || 'unknown@example.com';
+      const firstName = clerkUser.firstName || clerkUser.username || 'Unknown';
+      const lastName = clerkUser.lastName || 'User';
+      
       dbUser = await User.create({
         clerkId: userId,
-        email: req.auth.sessionClaims?.email || 'unknown@example.com',
-        firstName: req.auth.sessionClaims?.firstName || 'Unknown',
-        lastName: req.auth.sessionClaims?.lastName || 'User',
-        role: req.auth.sessionClaims?.metadata?.role || 'user',
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        role: clerkUser.privateMetadata?.role || 'user',
       });
       console.log('User created in MongoDB:', dbUser);
     } else {
