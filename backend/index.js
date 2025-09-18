@@ -12,7 +12,7 @@ app.use(express.json());
 const mongoURI = process.env.MONGODB_URI;
 const dbName = process.env.dbName;
 
-mongoose.connect(mongoURI + dbName)
+mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
 

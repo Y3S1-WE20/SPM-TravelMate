@@ -18,10 +18,11 @@ function requireRole(role) {
 router.get('/profile', ClerkExpressRequireAuth(), async (req, res) => {
   const { user } = req;
   try {
+    console.log('Clerk user:', user);
     // Try to find user in DB
     let dbUser = await User.findOne({ clerkId: user.id });
     if (!dbUser) {
-      // Create user if not exists
+      console.log('User not found in DB, creating new user...');
       dbUser = await User.create({
         clerkId: user.id,
         email: user.emailAddresses[0].emailAddress,
@@ -29,6 +30,9 @@ router.get('/profile', ClerkExpressRequireAuth(), async (req, res) => {
         lastName: user.lastName,
         role: user.privateMetadata?.role || 'user',
       });
+      console.log('User created in MongoDB:', dbUser);
+    } else {
+      console.log('User found in DB:', dbUser);
     }
     res.json({
       id: dbUser._id,
@@ -38,6 +42,7 @@ router.get('/profile', ClerkExpressRequireAuth(), async (req, res) => {
       role: dbUser.role,
     });
   } catch (err) {
+    console.error('Error in /auth/profile:', err);
     res.status(500).json({ message: 'Error fetching user profile', error: err.message });
   }
 });
