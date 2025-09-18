@@ -17,6 +17,7 @@ function Profile() {
 	);
 }
 
+
 function Login() {
 	return (
 		<ClerkProvider publishableKey={clerkPubKey}>
@@ -24,8 +25,7 @@ function Login() {
 				<Profile />
 			</SignedIn>
 			<SignedOut>
-				<SignIn routing="path" path="/sign-in" />
-				<SignUp routing="path" path="/sign-up" />
+				<SignIn />
 			</SignedOut>
 		</ClerkProvider>
 	);
