@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaHome, FaBed, FaCar, FaRoute, FaUserCircle, FaBars, FaTimes } from 'react-icons/fa';
 import './Header.css';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -13,6 +14,14 @@ const Header = () => {
 
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  const handleSignIn = () => {
+    navigate('/login');
+  };
+
+  const handleSignUp = () => {
+    navigate('/register');
   };
 
   return (
@@ -69,8 +78,8 @@ const Header = () => {
 
         {/* Auth Buttons */}
         <div className="auth-buttons">
-          <button className="sign-in-btn">Sign In</button>
-          <button className="sign-up-btn">Sign Up</button>
+          <button className="sign-in-btn" onClick={handleSignIn}>Sign In</button>
+          <button className="sign-up-btn" onClick={handleSignUp}>Sign Up</button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -127,10 +136,10 @@ const Header = () => {
         </Link>
 
         <div className="mobile-auth-buttons">
-          <button className="sign-in-btn" onClick={() => setIsMobileMenuOpen(false)}>
+          <button className="sign-in-btn" onClick={() => { handleSignIn(); setIsMobileMenuOpen(false); }}>
             Sign In
           </button>
-          <button className="sign-up-btn" onClick={() => setIsMobileMenuOpen(false)}>
+          <button className="sign-up-btn" onClick={() => { handleSignUp(); setIsMobileMenuOpen(false); }}>
             Sign Up
           </button>
         </div>

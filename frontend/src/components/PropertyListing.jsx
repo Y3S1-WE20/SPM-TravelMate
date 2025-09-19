@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import PropertyCard from './PropertyCard';
 import PropertyDetailModal from './PropertyDetailModal';
@@ -10,6 +11,7 @@ import { MdCancel, MdApartment, MdHouse } from 'react-icons/md';
 import { IoIosPaper } from 'react-icons/io';
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -147,6 +149,22 @@ const HomePage = () => {
         <div className="hero-content">
           <h1>Discover Your Perfect Travel Experience</h1>
           <p>Find amazing accommodations, vehicles, and tour packages for your next adventure</p>
+          
+          {/* Call to Action Buttons */}
+          <div className="hero-cta-buttons">
+            <button 
+              className="cta-btn primary" 
+              onClick={() => navigate('/register')}
+            >
+              Join TravelMate Today
+            </button>
+            <button 
+              className="cta-btn secondary" 
+              onClick={() => navigate('/login')}
+            >
+              Already a Member? Sign In
+            </button>
+          </div>
           
           {/* Modern Finder Box */}
           <div className="hero-search-widget">
