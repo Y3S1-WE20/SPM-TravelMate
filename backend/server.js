@@ -1,8 +1,10 @@
-#!/usr/bin/env node
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import authRoutes from './routes/authRoutes.js';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -42,7 +44,6 @@ app.get('/', (req, res) => {
 });
 
 // Auth routes
-const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 
 // Error handling middleware
