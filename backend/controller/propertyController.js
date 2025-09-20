@@ -1,4 +1,5 @@
 import Property from "../models/Property.js";
+import Booking from "../models/Booking.js";
 
 // Create new property with multiple images
 export const createProperty = async (req, res) => {
@@ -263,6 +264,70 @@ export const getPropertyStats = async (req, res) => {
         approved,
         rejected
       }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get all bookings for a specific property (for hotel owners)
+export const getPropertyBookings = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const bookings = await Booking.find({ propertyId: id })
+      .populate('userId', 'firstName lastName email phone')
+      .populate('propertyId', 'title city pricePerNight')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: bookings
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Update booking status (for hotel owners to approve/reject bookings)
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { status } = req.body;
+    
+    // Validate status
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid booking status'
+      });
+    }
+    
+    const booking = await Booking.findByIdAndUpdate(
+      bookingId,
+      { status, updatedAt: Date.now() },
+      { new: true }
+    ).populate('userId', 'firstName lastName email')
+     .populate('propertyId', 'title city');
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: `Booking ${status} successfully`,
+      data: booking
     });
   } catch (error) {
     res.status(500).json({

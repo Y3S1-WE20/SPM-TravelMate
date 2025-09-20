@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import './BookingPage.css';
 
 const BookingPage = () => {
-  const { propertyId } = useParams();
+  const { id: propertyId } = useParams(); // Fix: use 'id' from params and alias it to propertyId
   const navigate = useNavigate();
+  const { user } = useAuth(); // Add user context
   
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,11 @@ const BookingPage = () => {
 
   useEffect(() => {
     if (propertyId) {
+      console.log('PropertyID from URL:', propertyId); // Debug log
       fetchProperty();
+    } else {
+      console.error('No property ID found in URL params');
+      setLoading(false);
     }
   }, [propertyId]);
 
@@ -49,10 +55,13 @@ const BookingPage = () => {
 
   const fetchProperty = async () => {
     try {
+      console.log('Fetching property with ID:', propertyId); // Debug log
       const response = await axios.get(`http://localhost:5001/api/properties/${propertyId}`);
+      console.log('Property response:', response.data); // Debug log
       setProperty(response.data.data);
     } catch (error) {
       console.error('Error fetching property:', error);
+      console.error('Error details:', error.response?.data); // More detailed error log
       navigate('/');
     } finally {
       setLoading(false);
@@ -143,6 +152,7 @@ const BookingPage = () => {
     
     try {
       const bookingData = {
+        userId: user?._id, // Add userId for logged-in users
         propertyId: property._id,
         propertyTitle: property.title,
         propertyImage: property.images[0] || '',
@@ -184,11 +194,25 @@ const BookingPage = () => {
   };
 
   if (loading) {
-    return <div className="booking-loading">Loading property details...</div>;
+    return (
+      <div className="booking-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading property details...</p>
+        <p style={{ fontSize: '14px', color: '#666' }}>Property ID: {propertyId}</p>
+      </div>
+    );
   }
 
   if (!property) {
-    return <div className="booking-error">Property not found</div>;
+    return (
+      <div className="booking-error">
+        <h2>Property not found</h2>
+        <p>The property you're looking for doesn't exist or has been removed.</p>
+        <button onClick={() => navigate('/')} className="btn-back-home">
+          Back to Properties
+        </button>
+      </div>
+    );
   }
 
   return (

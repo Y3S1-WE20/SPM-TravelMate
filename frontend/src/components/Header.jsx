@@ -1,18 +1,50 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { FaMapMarkerAlt, FaHome, FaBed, FaCar, FaRoute, FaUserCircle, FaBars, FaTimes } from 'react-icons/fa';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaMapMarkerAlt, FaHome, FaBed, FaCar, FaRoute, FaUserCircle, FaBars, FaTimes, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 import './Header.css';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const toggleProfileDropdown = () => {
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
+  };
+
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  const handleSignIn = () => {
+    navigate('/login');
+  };
+
+  const handleSignUp = () => {
+    navigate('/register');
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsProfileDropdownOpen(false);
+    navigate('/');
+  };
+
+  const handleDashboard = () => {
+    navigate('/dashboard');
+    setIsProfileDropdownOpen(false);
+  };
+
+  const handleAdminDashboard = () => {
+    navigate('/admin');
+    setIsProfileDropdownOpen(false);
   };
 
   return (
@@ -45,6 +77,7 @@ const Header = () => {
           <Link 
             to="/add-property" 
             className={`nav-item ${isActive('/add-property') ? 'active' : ''}`}
+            style={{ display: isAuthenticated && user?.role === 'hotel owner' ? 'flex' : 'none' }}
           >
             <FaCar className="nav-icon" />
             <span>List Property</span>
@@ -58,19 +91,63 @@ const Header = () => {
             <span>Tours</span>
           </Link>
           
-          <Link 
-            to="/admin" 
-            className={`nav-item ${isActive('/admin') ? 'active' : ''}`}
-          >
-            <FaUserCircle className="nav-icon" />
-            <span>Dashboard</span>
-          </Link>
+          {isAuthenticated && user?.role === 'admin' && (
+            <Link 
+              to="/admin" 
+              className={`nav-item ${isActive('/admin') ? 'active' : ''}`}
+            >
+              <FaUserCircle className="nav-icon" />
+              <span>Admin</span>
+            </Link>
+          )}
         </nav>
 
-        {/* Auth Buttons */}
-        <div className="auth-buttons">
-          <button className="sign-in-btn">Sign In</button>
-          <button className="sign-up-btn">Sign Up</button>
+        {/* Auth Section */}
+        <div className="auth-section">
+          {isAuthenticated ? (
+            <div className="user-profile">
+              <button className="profile-btn" onClick={toggleProfileDropdown}>
+                <FaUserCircle className="profile-icon" />
+                <span className="username">{user?.firstName || user?.username}</span>
+              </button>
+              
+              {isProfileDropdownOpen && (
+                <div className="profile-dropdown">
+                  <div className="user-info">
+                    <p className="user-name">{user?.firstName} {user?.lastName}</p>
+                    <p className="user-role">{user?.role}</p>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item" onClick={handleDashboard}>
+                    <FaTachometerAlt className="dropdown-icon" />
+                    Dashboard
+                  </button>
+                  {user?.role === 'admin' && (
+                    <button className="dropdown-item" onClick={handleAdminDashboard}>
+                      <FaUserCircle className="dropdown-icon" />
+                      Admin Panel
+                    </button>
+                  )}
+                  <button className="dropdown-item logout" onClick={handleLogout}>
+                    <FaSignOutAlt className="dropdown-icon" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="auth-buttons">
+              <button className="sign-in-btn" onClick={handleSignIn}>Sign In</button>
+              <button className="sign-up-btn" onClick={handleSignUp}>Sign Up</button>
+              <button 
+                className="admin-login-btn"
+                onClick={() => navigate('/admin-login')}
+                title="Admin Portal"
+              >
+                Admin
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -103,6 +180,7 @@ const Header = () => {
           to="/add-property" 
           className={`mobile-nav-item ${isActive('/add-property') ? 'active' : ''}`}
           onClick={() => setIsMobileMenuOpen(false)}
+          style={{ display: isAuthenticated && user?.role === 'hotel owner' ? 'flex' : 'none' }}
         >
           <FaCar className="nav-icon" />
           <span>List Property</span>
@@ -117,22 +195,56 @@ const Header = () => {
           <span>Tours</span>
         </Link>
         
-        <Link 
-          to="/admin" 
-          className={`mobile-nav-item ${isActive('/admin') ? 'active' : ''}`}
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          <FaUserCircle className="nav-icon" />
-          <span>Dashboard</span>
-        </Link>
+        {isAuthenticated && (
+          <Link 
+            to="/dashboard" 
+            className={`mobile-nav-item ${isActive('/dashboard') ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <FaTachometerAlt className="nav-icon" />
+            <span>Dashboard</span>
+          </Link>
+        )}
+        
+        {isAuthenticated && user?.role === 'admin' && (
+          <Link 
+            to="/admin" 
+            className={`mobile-nav-item ${isActive('/admin') ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <FaUserCircle className="nav-icon" />
+            <span>Admin</span>
+          </Link>
+        )}
 
-        <div className="mobile-auth-buttons">
-          <button className="sign-in-btn" onClick={() => setIsMobileMenuOpen(false)}>
-            Sign In
-          </button>
-          <button className="sign-up-btn" onClick={() => setIsMobileMenuOpen(false)}>
-            Sign Up
-          </button>
+        <div className="mobile-auth-section">
+          {isAuthenticated ? (
+            <div className="mobile-user-info">
+              <div className="mobile-user-details">
+                <p className="mobile-username">{user?.firstName || user?.username}</p>
+                <p className="mobile-user-role">{user?.role}</p>
+              </div>
+              <button className="mobile-logout-btn" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>
+                <FaSignOutAlt className="logout-icon" />
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="mobile-auth-buttons">
+              <button className="sign-in-btn" onClick={() => { handleSignIn(); setIsMobileMenuOpen(false); }}>
+                Sign In
+              </button>
+              <button className="sign-up-btn" onClick={() => { handleSignUp(); setIsMobileMenuOpen(false); }}>
+                Sign Up
+              </button>
+              <button 
+                className="admin-login-btn" 
+                onClick={() => { navigate('/admin-login'); setIsMobileMenuOpen(false); }}
+              >
+                Admin Portal
+              </button>
+            </div>
+          )}
         </div>
       </nav>
     </header>

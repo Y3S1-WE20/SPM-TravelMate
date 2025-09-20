@@ -9,13 +9,21 @@ import {
   updatePropertyStatus,
   deleteProperty,
   getPropertiesByOwner,
-  getPropertyStats
+  getPropertyStats,
+  getPropertyBookings,
+  updateBookingStatus
 } from "../Controller/propertyController.js";
 
 const router = express.Router();
 
-// Public routes
+// Public route for approved properties
 router.get("/public", getApprovedProperties);
+
+// Property booking management routes for hotel owners (must come before /:id route)
+router.get("/:id/bookings", getPropertyBookings);
+router.put("/bookings/:bookingId/status", updateBookingStatus);
+
+// Property detail route
 router.get("/:id", getPropertyById);
 
 // Admin routes

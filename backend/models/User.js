@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
   firstName: { type: String },
   lastName: { type: String },
   role: { type: String, enum: ['admin', 'user', 'hotel owner'], default: 'user' },
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Property'
+  }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

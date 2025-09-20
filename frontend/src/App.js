@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import AdminLogin from './pages/AdminLogin';
 
 import Header from './components/Header';
 import PropertyListing from './components/PropertyListing';
@@ -26,6 +27,7 @@ function App() {
             <Route path="/booking/:id" element={<BookingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
             
             {/* Protected routes */}
             <Route 
@@ -39,7 +41,7 @@ function App() {
             <Route 
               path="/admin" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />
                 </ProtectedRoute>
               } 
@@ -47,7 +49,7 @@ function App() {
             <Route 
               path="/add-property" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="hotel owner">
                   <AddPropertyForm />
                 </ProtectedRoute>
               } 

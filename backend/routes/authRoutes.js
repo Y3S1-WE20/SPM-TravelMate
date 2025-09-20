@@ -82,6 +82,7 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       token,
       user: {
+        _id: user._id,
         id: user._id,
         username: user.username,
         email: user.email,
@@ -188,6 +189,35 @@ router.post('/register', async (req, res) => {
       message: 'Registration failed', 
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Profile endpoint - Get user profile
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch profile',
+      error: error.message 
     });
   }
 });

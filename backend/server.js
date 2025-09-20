@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import authRoutes from './routes/authRoutes.js';
 import propertyRoutes from "./routes/propertyRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 // Get directory name in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +42,8 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/auth', authRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // Basic route for health check
 app.get("/", (req, res) => {
