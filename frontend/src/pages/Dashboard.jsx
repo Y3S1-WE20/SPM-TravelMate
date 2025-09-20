@@ -23,18 +23,25 @@ function Dashboard() {
       navigate('/login');
       return;
     }
+    console.log('Dashboard: User object:', user);
+    console.log('Dashboard: User ID (_id):', user._id);
+    console.log('Dashboard: User ID (id):', user.id);
+    console.log('Dashboard: Using userId:', user._id || user.id);
     fetchUserBookings();
     fetchUserFavorites();
   }, [user, navigate, bookingFilter]);
 
   const fetchUserBookings = async () => {
-    if (!user?._id) return;
+    const userId = user._id || user.id;
+    if (!userId) return;
     
     try {
       setLoading(true);
       const statusFilter = bookingFilter === 'all' ? '' : bookingFilter;
+      console.log('Dashboard: Fetching bookings for userId:', userId);
       // Use user-specific endpoint if available, otherwise fall back to email
-      const response = await api.get(`/api/users/${user._id}/bookings?status=${statusFilter}&limit=50`);
+      const response = await api.get(`/api/users/${userId}/bookings?status=${statusFilter}&limit=50`);
+      console.log('Dashboard: Bookings response:', response.data);
       setBookings(response.data.data || []);
     } catch (error) {
       console.error('Error fetching user bookings:', error);
@@ -53,11 +60,12 @@ function Dashboard() {
   };
 
   const fetchUserFavorites = async () => {
-    if (!user?._id) return;
+    const userId = user._id || user.id;
+    if (!userId) return;
     
     try {
       setFavoritesLoading(true);
-      const response = await api.get(`/api/users/${user._id}/favorites`);
+      const response = await api.get(`/api/users/${userId}/favorites`);
       setFavorites(response.data.data || []);
     } catch (error) {
       console.error('Error fetching favorites:', error);
@@ -68,10 +76,11 @@ function Dashboard() {
   };
 
   const removeFromFavorites = async (propertyId) => {
-    if (!user?._id) return;
+    const userId = user._id || user.id;
+    if (!userId) return;
     
     try {
-      await api.delete(`/api/users/${user._id}/favorites/${propertyId}`);
+      await api.delete(`/api/users/${userId}/favorites/${propertyId}`);
       // Update local state
       setFavorites(prev => prev.filter(property => property._id !== propertyId));
     } catch (error) {
@@ -721,12 +730,12 @@ function Dashboard() {
 
       {/* Hotel Owner Properties Tab */}
       {activeTab === 'properties' && user.role === 'hotel owner' && (
-        <HotelManagement userId={user._id} api={api} />
+        <HotelManagement userId={user._id || user.id} api={api} />
       )}
 
       {/* Hotel Owner Booking Management Tab */}
       {activeTab === 'booking-management' && user.role === 'hotel owner' && (
-        <BookingManagement userId={user._id} api={api} />
+        <BookingManagement userId={user._id || user.id} api={api} />
       )}
     </div>
   );

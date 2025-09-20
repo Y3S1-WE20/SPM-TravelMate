@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
           setToken(storedToken);
           api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
           const response = await api.get('/auth/profile');
+          console.log('AuthContext: Profile response:', response.data);
           setUser(response.data.user);
         } catch (error) {
           console.error('Token validation failed:', error);

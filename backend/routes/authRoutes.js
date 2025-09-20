@@ -203,7 +203,15 @@ router.get('/profile', authenticateToken, async (req, res) => {
     
     res.json({
       success: true,
-      user: user
+      user: {
+        _id: user._id,
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      }
     });
   } catch (error) {
     console.error('Profile fetch error:', error);
