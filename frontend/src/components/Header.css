@@ -439,3 +439,15 @@ html {
   backdrop-filter: blur(10px);
   z-index: -1;
 }
+
+/* Force header logo image size (high specificity to override other rules) */
+.modern-header .header-container .logo img,
+.modern-header .header-container .logo .logo-image,
+.modern-header .header-container .logo .logo-img {
+  width: 40px !important;
+  height: 40px !important;
+  max-width: 40px !important;
+  object-fit: contain !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
