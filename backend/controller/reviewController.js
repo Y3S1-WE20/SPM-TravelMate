@@ -150,7 +150,7 @@ export const getReviewStats = async (req, res) => {
     const { propertyId } = req.params;
 
     const stats = await Review.aggregate([
-      { $match: { propertyId: mongoose.Types.ObjectId(propertyId), status: 'approved' } },
+      { $match: { propertyId: new mongoose.Types.ObjectId(propertyId), status: 'approved' } },
       {
         $group: {
           _id: null,

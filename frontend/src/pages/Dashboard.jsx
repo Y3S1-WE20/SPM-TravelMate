@@ -40,6 +40,7 @@ function Dashboard() {
       console.error('Error fetching user bookings:', error);
       // Fallback to email-based fetching for backward compatibility
       try {
+        const statusFilter = bookingFilter === 'all' ? '' : bookingFilter;
         const response = await api.get(`/api/bookings?email=${user.email}&status=${statusFilter}&limit=50`);
         setBookings(response.data.data || []);
       } catch (fallbackError) {
@@ -213,6 +214,22 @@ function Dashboard() {
               }}
             >
               Manage Properties
+            </button>
+          )}
+          {user.role === 'hotel owner' && (
+            <button
+              onClick={() => setActiveTab('booking-management')}
+              style={{
+                padding: '15px 25px',
+                border: 'none',
+                background: activeTab === 'booking-management' ? '#007bff' : 'transparent',
+                color: activeTab === 'booking-management' ? 'white' : '#333',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+            >
+              Booking Management
             </button>
           )}
         </div>
@@ -706,6 +723,11 @@ function Dashboard() {
       {activeTab === 'properties' && user.role === 'hotel owner' && (
         <HotelManagement userId={user._id} api={api} />
       )}
+
+      {/* Hotel Owner Booking Management Tab */}
+      {activeTab === 'booking-management' && user.role === 'hotel owner' && (
+        <BookingManagement userId={user._id} api={api} />
+      )}
     </div>
   );
 }
@@ -972,6 +994,260 @@ const HotelManagement = ({ userId, api }) => {
           }}
           api={api}
         />
+      )}
+    </div>
+  );
+};
+
+// Booking Management Component for Hotel Owners
+const BookingManagement = ({ userId, api }) => {
+  const [allBookings, setAllBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProperty, setSelectedProperty] = useState('all');
+  const [properties, setProperties] = useState([]);
+
+  useEffect(() => {
+    fetchOwnerProperties();
+  }, [userId]);
+
+  useEffect(() => {
+    if (properties.length > 0) {
+      fetchAllBookings();
+    }
+  }, [properties, selectedProperty]);
+
+  const fetchOwnerProperties = async () => {
+    try {
+      const response = await api.get(`/api/properties/owner/${userId}`);
+      setProperties(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+    }
+  };
+
+  const fetchAllBookings = async () => {
+    try {
+      setLoading(true);
+      let bookings = [];
+      
+      if (selectedProperty === 'all') {
+        // Fetch bookings for all properties
+        const allPromises = properties.map(property => 
+          api.get(`/api/properties/${property._id}/bookings`)
+        );
+        const responses = await Promise.all(allPromises);
+        bookings = responses.flatMap(response => response.data.data || []);
+      } else {
+        // Fetch bookings for selected property
+        const response = await api.get(`/api/properties/${selectedProperty}/bookings`);
+        bookings = response.data.data || [];
+      }
+      
+      setAllBookings(bookings);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      setAllBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateBookingStatus = async (bookingId, newStatus) => {
+    try {
+      await api.put(`/api/properties/bookings/${bookingId}/status`, {
+        status: newStatus
+      });
+      
+      // Refresh bookings
+      fetchAllBookings();
+      
+      alert(`Booking ${newStatus} successfully!`);
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      alert('Error updating booking status');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return '#ffc107';
+      case 'confirmed': return '#28a745';
+      case 'cancelled': return '#dc3545';
+      case 'completed': return '#17a2b8';
+      default: return '#6c757d';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const filteredBookings = allBookings.filter(booking => {
+    if (selectedProperty === 'all') return true;
+    return booking.property._id === selectedProperty;
+  });
+
+  return (
+    <div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '20px'
+      }}>
+        <h2 style={{ margin: 0, color: '#333' }}>Booking Management</h2>
+        <select
+          value={selectedProperty}
+          onChange={(e) => setSelectedProperty(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '5px',
+            border: '1px solid #ddd',
+            fontSize: '14px'
+          }}
+        >
+          <option value="all">All Properties</option>
+          {properties.map(property => (
+            <option key={property._id} value={property._id}>
+              {property.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+          Loading bookings...
+        </div>
+      ) : filteredBookings.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+          No bookings found for the selected property.
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gap: '15px'
+        }}>
+          {filteredBookings.map(booking => (
+            <div key={booking._id} style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '10px',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr auto',
+                gap: '20px',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h4 style={{ margin: '0 0 5px 0', color: '#333' }}>
+                    {booking.property?.title || 'Property Not Found'}
+                  </h4>
+                  <p style={{ margin: '0 0 5px 0', color: '#666', fontSize: '14px' }}>
+                    Guest: {booking.user?.fullName || 'N/A'}
+                  </p>
+                  <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                    Email: {booking.user?.email || 'N/A'}
+                  </p>
+                  {booking.user?.phone && (
+                    <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                      Phone: {booking.user.phone}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
+                    <strong>Check-in:</strong> {formatDate(booking.checkIn)}
+                  </p>
+                  <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
+                    <strong>Check-out:</strong> {formatDate(booking.checkOut)}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    <strong>Guests:</strong> {booking.guests}
+                  </p>
+                </div>
+                
+                <div>
+                  <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
+                    <strong>Total:</strong> ${booking.totalAmount}
+                  </p>
+                  <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
+                    <strong>Booked:</strong> {formatDate(booking.createdAt)}
+                  </p>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    backgroundColor: getStatusColor(booking.status)
+                  }}>
+                    {booking.status.toUpperCase()}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {booking.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => updateBookingStatus(booking._id, 'confirmed')}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => updateBookingStatus(booking._id, 'cancelled')}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                  {booking.status === 'confirmed' && (
+                    <button
+                      onClick={() => updateBookingStatus(booking._id, 'completed')}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: '#17a2b8',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      Mark Complete
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

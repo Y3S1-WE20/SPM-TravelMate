@@ -192,4 +192,25 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Profile endpoint - Get user profile
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      user: user
+    });
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch profile',
+      error: error.message 
+    });
+  }
+});
+
 export default router;

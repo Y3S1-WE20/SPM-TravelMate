@@ -9,13 +9,29 @@ export const getUserBookings = async (req, res) => {
     const { userId } = req.params;
     const { status, limit = 20, page = 1 } = req.query;
 
-    const filter = { userId };
+    // Get user details to search by email as well
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Search both by userId and email to cover all cases
+    const filter = {
+      $or: [
+        { userId: userId },
+        { 'guestInfo.email': user.email }
+      ]
+    };
+    
     if (status && status !== 'all') {
       filter.status = status;
     }
 
     const bookings = await Booking.find(filter)
-      .populate('propertyId', 'title city images pricePerNight')
+      .populate('propertyId', 'title city images pricePerNight location')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((page - 1) * limit);
@@ -48,7 +64,7 @@ export const getUserBookingStats = async (req, res) => {
     const { userId } = req.params;
 
     const stats = await Booking.aggregate([
-      { $match: { userId: mongoose.Types.ObjectId(userId) } },
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: '$status',
@@ -60,7 +76,7 @@ export const getUserBookingStats = async (req, res) => {
 
     const totalBookings = await Booking.countDocuments({ userId });
     const totalSpent = await Booking.aggregate([
-      { $match: { userId: mongoose.Types.ObjectId(userId) } },
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, total: { $sum: '$totalCost' } } }
     ]);
 
