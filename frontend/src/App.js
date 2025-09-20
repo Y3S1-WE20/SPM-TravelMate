@@ -5,6 +5,7 @@ import AddPropertyForm from './components/AddPropertyForm';
 import AdminDashboard from './components/AdminDashboard';
 import PropertyListing from './components/PropertyListing';
 import BookingPage from './components/BookingPage';
+import BookingSummary from './components/BookingSummary';
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<PropertyListing />} />
             <Route path="/add-property" element={<AddPropertyForm />} />
             <Route path="/booking/:propertyId" element={<BookingPage />} />
+            <Route path="/booking-summary" element={<BookingSummary />} />
             <Route path="/admin" element={<AdminDashboard />} />
             {/* Redirect any unknown routes to home */}
             <Route path="*" element={<PropertyListing />} />
