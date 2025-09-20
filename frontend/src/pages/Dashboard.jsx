@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AddPropertyForm from '../components/AddPropertyForm';
+import ProfileSettings from '../components/ProfileSettings';
 
 function Dashboard() {
   const { user, logout, api } = useAuth();
@@ -304,6 +305,9 @@ function Dashboard() {
               )}
             </div>
           </div>
+
+          {/* Profile settings (allow updating names/email/password) */}
+          <ProfileSettings onUpdated={() => window.location.reload()} />
 
           {/* Role-based Content */}
           <div style={{

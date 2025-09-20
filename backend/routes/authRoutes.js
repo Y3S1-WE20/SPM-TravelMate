@@ -222,4 +222,68 @@ router.get('/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Update user profile (protected route)
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    const { firstName, lastName, email, currentPassword, newPassword } = req.body;
+    
+    // If password change is requested, validate current password first
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ 
+          message: 'Current password is required to change password' 
+        });
+      }
+
+      // Verify current password
+      const user = await User.findById(req.user._id);
+      const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ 
+          message: 'Current password is incorrect' 
+        });
+      }
+
+      // Validate new password length
+      if (newPassword.length < 6) {
+        return res.status(400).json({ 
+          message: 'New password must be at least 6 characters long' 
+        });
+      }
+    }
+    
+    // Build update object with only provided fields
+    const updateData = {};
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (email !== undefined) updateData.email = email;
+    if (newPassword) updateData.password = newPassword; // User model will hash this automatically
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.json({
+      message: newPassword ? 'Profile and password updated successfully' : 'Profile updated successfully',
+      user: {
+        _id: updatedUser._id,
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        role: updatedUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ 
+      message: 'Failed to update profile', 
+      error: error.message 
+    });
+  }
+});
+
 export default router;
