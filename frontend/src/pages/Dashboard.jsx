@@ -746,7 +746,9 @@ const HotelManagement = ({ userId, api }) => {
   const fetchOwnerProperties = async () => {
     try {
       setLoading(true);
+      console.log('HotelManagement: Fetching properties for userId:', userId);
       const response = await api.get(`/api/properties/owner/${userId}`);
+      console.log('HotelManagement: Properties response:', response.data);
       setProperties(response.data.data || []);
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -1011,14 +1013,14 @@ const BookingManagement = ({ userId, api }) => {
   }, [userId]);
 
   useEffect(() => {
-    if (properties.length > 0) {
-      fetchAllBookings();
-    }
+    fetchAllBookings();
   }, [properties, selectedProperty]);
 
   const fetchOwnerProperties = async () => {
     try {
+      console.log('BookingManagement: Fetching properties for userId:', userId);
       const response = await api.get(`/api/properties/owner/${userId}`);
+      console.log('BookingManagement: Properties response:', response.data);
       setProperties(response.data.data || []);
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -1030,8 +1032,15 @@ const BookingManagement = ({ userId, api }) => {
       setLoading(true);
       let bookings = [];
       
+      if (properties.length === 0) {
+        console.log('BookingManagement: No properties found, no bookings to fetch');
+        setAllBookings([]);
+        return;
+      }
+      
       if (selectedProperty === 'all') {
         // Fetch bookings for all properties
+        console.log('BookingManagement: Fetching bookings for all properties:', properties.length);
         const allPromises = properties.map(property => 
           api.get(`/api/properties/${property._id}/bookings`)
         );
@@ -1039,10 +1048,12 @@ const BookingManagement = ({ userId, api }) => {
         bookings = responses.flatMap(response => response.data.data || []);
       } else {
         // Fetch bookings for selected property
+        console.log('BookingManagement: Fetching bookings for property:', selectedProperty);
         const response = await api.get(`/api/properties/${selectedProperty}/bookings`);
         bookings = response.data.data || [];
       }
       
+      console.log('BookingManagement: Found bookings:', bookings.length);
       setAllBookings(bookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);

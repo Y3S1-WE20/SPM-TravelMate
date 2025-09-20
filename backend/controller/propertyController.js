@@ -314,8 +314,8 @@ export const updateBookingStatus = async (req, res) => {
       bookingId,
       { status, updatedAt: Date.now() },
       { new: true }
-    ).populate('user', 'fullName email')
-     .populate('property', 'title location');
+    ).populate('userId', 'firstName lastName email')
+     .populate('propertyId', 'title city');
     
     if (!booking) {
       return res.status(404).json({

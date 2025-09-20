@@ -16,8 +16,14 @@ import {
 
 const router = express.Router();
 
-// Public routes
+// Public route for approved properties
 router.get("/public", getApprovedProperties);
+
+// Property booking management routes for hotel owners (must come before /:id route)
+router.get("/:id/bookings", getPropertyBookings);
+router.put("/bookings/:bookingId/status", updateBookingStatus);
+
+// Property detail route
 router.get("/:id", getPropertyById);
 
 // Admin routes
@@ -28,9 +34,5 @@ router.patch("/:id/status", updatePropertyStatus);
 router.delete("/:id", deleteProperty);
 router.get("/owner/:ownerId", getPropertiesByOwner);
 router.get("/stats/summary", getPropertyStats);
-
-// Property booking management routes for hotel owners
-router.get("/:id/bookings", getPropertyBookings);
-router.put("/bookings/:bookingId/status", updateBookingStatus);
 
 export default router;
