@@ -74,7 +74,7 @@ const BookingSummary = () => {
           <div className="property-info">
             {bookingData.propertyImage && (
               <div className="property-image">
-                <img src={`http://localhost:5001${bookingData.propertyImage}`} alt={bookingData.propertyTitle} />
+                <img src={bookingData.propertyImage} alt={bookingData.propertyTitle} />
               </div>
             )}
             <div className="property-details">
