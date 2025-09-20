@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import FavoriteButton from './FavoriteButton';
+import ReviewSection from './ReviewSection';
 import './PropertyDetailModal.css';
 
 // Feature icons mapping
@@ -157,8 +159,13 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
         {/* Property Details */}
         <div className="modal-content-section">
           <div className="modal-header">
-            <h2 className="modal-title">{property.title}</h2>
-            <div className="modal-property-type">{property.propertyType}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2 className="modal-title">{property.title}</h2>
+                <div className="modal-property-type">{property.propertyType}</div>
+              </div>
+              <FavoriteButton propertyId={property._id} />
+            </div>
           </div>
 
           <div className="modal-location">
@@ -259,6 +266,9 @@ const PropertyDetailModal = ({ property, isOpen, onClose }) => {
               ✉️ Email Owner
             </button>
           </div>
+
+          {/* Reviews Section */}
+          <ReviewSection propertyId={property._id} />
         </div>
       </div>
     </div>

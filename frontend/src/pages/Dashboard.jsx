@@ -7,7 +7,9 @@ function Dashboard() {
   const { user, logout, api } = useAuth();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [bookingFilter, setBookingFilter] = useState('all');
 
@@ -22,21 +24,58 @@ function Dashboard() {
       return;
     }
     fetchUserBookings();
+    fetchUserFavorites();
   }, [user, navigate, bookingFilter]);
 
   const fetchUserBookings = async () => {
-    if (!user?.email) return;
+    if (!user?._id) return;
     
     try {
       setLoading(true);
       const statusFilter = bookingFilter === 'all' ? '' : bookingFilter;
-      const response = await api.get(`/api/bookings?email=${user.email}&status=${statusFilter}&limit=50`);
+      // Use user-specific endpoint if available, otherwise fall back to email
+      const response = await api.get(`/api/users/${user._id}/bookings?status=${statusFilter}&limit=50`);
       setBookings(response.data.data || []);
     } catch (error) {
-      console.error('Error fetching bookings:', error);
-      setBookings([]);
+      console.error('Error fetching user bookings:', error);
+      // Fallback to email-based fetching for backward compatibility
+      try {
+        const response = await api.get(`/api/bookings?email=${user.email}&status=${statusFilter}&limit=50`);
+        setBookings(response.data.data || []);
+      } catch (fallbackError) {
+        console.error('Error fetching bookings with email:', fallbackError);
+        setBookings([]);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserFavorites = async () => {
+    if (!user?._id) return;
+    
+    try {
+      setFavoritesLoading(true);
+      const response = await api.get(`/api/users/${user._id}/favorites`);
+      setFavorites(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+      setFavorites([]);
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
+  const removeFromFavorites = async (propertyId) => {
+    if (!user?._id) return;
+    
+    try {
+      await api.delete(`/api/users/${user._id}/favorites/${propertyId}`);
+      // Update local state
+      setFavorites(prev => prev.filter(property => property._id !== propertyId));
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+      alert('Failed to remove from favorites. Please try again.');
     }
   };
 
@@ -145,6 +184,20 @@ function Dashboard() {
             }}
           >
             My Bookings ({bookings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('favorites')}
+            style={{
+              padding: '15px 25px',
+              border: 'none',
+              background: activeTab === 'favorites' ? '#007bff' : 'transparent',
+              color: activeTab === 'favorites' ? 'white' : '#333',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}
+          >
+            My Favorites ({favorites.length})
           </button>
           {user.role === 'hotel owner' && (
             <button
@@ -532,8 +585,8 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Hotel Owner Properties Tab */}
-      {activeTab === 'properties' && user.role === 'hotel owner' && (
+      {/* Favorites Tab */}
+      {activeTab === 'favorites' && (
         <div style={{
           backgroundColor: 'white',
           padding: '30px',
@@ -541,13 +594,590 @@ function Dashboard() {
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
         }}>
           <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#333' }}>
-            Add New Property
+            My Favorite Properties
           </h3>
-          <AddPropertyForm />
+          
+          {favoritesLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div>Loading favorites...</div>
+            </div>
+          ) : favorites.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              <p>You haven't added any properties to your favorites yet.</p>
+              <button 
+                onClick={() => navigate('/properties')}
+                style={{
+                  marginTop: '15px',
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer'
+                }}
+              >
+                Browse Properties
+              </button>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '20px'
+            }}>
+              {favorites.map((property) => (
+                <div key={property._id} style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  backgroundColor: 'white',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  transition: 'transform 0.2s ease'
+                }}>
+                  {property.images && property.images[0] && (
+                    <img 
+                      src={property.images[0]}
+                      alt={property.title}
+                      style={{
+                        width: '100%',
+                        height: '180px',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  )}
+                  <div style={{ padding: '15px' }}>
+                    <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>{property.title}</h4>
+                    <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>
+                      📍 {property.city}
+                    </p>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginTop: '15px'
+                    }}>
+                      <span style={{ 
+                        fontSize: '18px', 
+                        fontWeight: 'bold', 
+                        color: '#007bff' 
+                      }}>
+                        ${property.pricePerNight}/night
+                      </span>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={() => navigate(`/property/${property._id}`)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => removeFromFavorites(property._id)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Hotel Owner Properties Tab */}
+      {activeTab === 'properties' && user.role === 'hotel owner' && (
+        <HotelManagement userId={user._id} api={api} />
       )}
     </div>
   );
 }
+
+// Hotel Management Component
+const HotelManagement = ({ userId, api }) => {
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProperty, setEditingProperty] = useState(null);
+
+  useEffect(() => {
+    fetchOwnerProperties();
+  }, [userId]);
+
+  const fetchOwnerProperties = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/api/properties/owner/${userId}`);
+      setProperties(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId) => {
+    if (!window.confirm('Are you sure you want to delete this property?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/api/properties/${propertyId}`);
+      setProperties(prev => prev.filter(p => p._id !== propertyId));
+      alert('Property deleted successfully');
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      alert('Failed to delete property');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'approved': return '#28a745';
+      case 'pending': return '#ffc107';
+      case 'rejected': return '#dc3545';
+      default: return '#6c757d';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px' }}>
+        <div>Loading your properties...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      backgroundColor: 'white',
+      padding: '30px',
+      borderRadius: '8px',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '30px'
+      }}>
+        <h3 style={{ margin: 0, color: '#333' }}>
+          My Properties ({properties.length})
+        </h3>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          {showAddForm ? 'Cancel' : '+ Add New Property'}
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div style={{ 
+          marginBottom: '30px',
+          padding: '20px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px'
+        }}>
+          <h4 style={{ marginTop: 0 }}>Add New Property</h4>
+          <AddPropertyForm onSuccess={() => {
+            setShowAddForm(false);
+            fetchOwnerProperties();
+          }} />
+        </div>
+      )}
+
+      {properties.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          <p>You haven't added any properties yet.</p>
+          <button 
+            onClick={() => setShowAddForm(true)}
+            style={{
+              marginTop: '15px',
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            Add Your First Property
+          </button>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+          gap: '20px'
+        }}>
+          {properties.map((property) => (
+            <div key={property._id} style={{
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              backgroundColor: 'white',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+            }}>
+              {property.images && property.images[0] && (
+                <img 
+                  src={property.images[0]}
+                  alt={property.title}
+                  style={{
+                    width: '100%',
+                    height: '200px',
+                    objectFit: 'cover'
+                  }}
+                />
+              )}
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                  <h4 style={{ margin: '0 0 5px 0', color: '#333' }}>{property.title}</h4>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    backgroundColor: getStatusColor(property.status),
+                    textTransform: 'capitalize'
+                  }}>
+                    {property.status}
+                  </span>
+                </div>
+                
+                <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>
+                  📍 {property.city} • {property.propertyType}
+                </p>
+                
+                <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '14px', lineHeight: '1.4' }}>
+                  {property.description.length > 100 
+                    ? `${property.description.substring(0, 100)}...`
+                    : property.description
+                  }
+                </p>
+
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '15px'
+                }}>
+                  <span style={{ 
+                    fontSize: '18px', 
+                    fontWeight: 'bold', 
+                    color: '#007bff' 
+                  }}>
+                    LKR {property.pricePerNight}/night
+                  </span>
+                  {property.discount > 0 && (
+                    <span style={{
+                      backgroundColor: '#e74c3c',
+                      color: 'white',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      {property.discount}% OFF
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => setEditingProperty(property)}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      flex: '1'
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProperty(property._id)}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      flex: '1'
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                {property.adminNotes && (
+                  <div style={{
+                    marginTop: '15px',
+                    padding: '10px',
+                    backgroundColor: '#fff3cd',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#856404'
+                  }}>
+                    <strong>Admin Notes:</strong> {property.adminNotes}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Edit Property Modal */}
+      {editingProperty && (
+        <PropertyEditModal 
+          property={editingProperty}
+          onClose={() => setEditingProperty(null)}
+          onUpdate={() => {
+            setEditingProperty(null);
+            fetchOwnerProperties();
+          }}
+          api={api}
+        />
+      )}
+    </div>
+  );
+};
+
+// Property Edit Modal Component
+const PropertyEditModal = ({ property, onClose, onUpdate, api }) => {
+  const [formData, setFormData] = useState({
+    title: property.title,
+    description: property.description,
+    pricePerNight: property.pricePerNight,
+    discount: property.discount || 0,
+    contactNumber: property.contactNumber,
+    email: property.email
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      await api.put(`/api/properties/${property._id}`, formData);
+      alert('Property updated successfully');
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating property:', error);
+      alert('Failed to update property');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '30px',
+        borderRadius: '8px',
+        maxWidth: '500px',
+        width: '90%',
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3 style={{ marginTop: 0 }}>Edit Property: {property.title}</h3>
+        
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
+              Title:
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({...formData, title: e.target.value})}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '4px',
+                border: '1px solid #ddd'
+              }}
+              required
+            />
+          </div>
+
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
+              Description:
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '4px',
+                border: '1px solid #ddd',
+                minHeight: '100px'
+              }}
+              required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
+                Price per Night (LKR):
+              </label>
+              <input
+                type="number"
+                value={formData.pricePerNight}
+                onChange={(e) => setFormData({...formData, pricePerNight: parseInt(e.target.value)})}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd'
+                }}
+                required
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
+                Discount (%):
+              </label>
+              <input
+                type="number"
+                value={formData.discount}
+                onChange={(e) => setFormData({...formData, discount: parseInt(e.target.value) || 0})}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd'
+                }}
+                min="0"
+                max="100"
+              />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
+              Contact Number:
+            </label>
+            <input
+              type="tel"
+              value={formData.contactNumber}
+              onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '4px',
+                border: '1px solid #ddd'
+              }}
+              required
+            />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
+              Email:
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '4px',
+                border: '1px solid #ddd'
+              }}
+              required
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                flex: '1'
+              }}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                flex: '1'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default Dashboard;

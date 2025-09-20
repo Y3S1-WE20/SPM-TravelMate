@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 const bookingSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false // Will be added for authenticated users
+  },
   propertyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Property',
@@ -127,6 +132,7 @@ bookingSchema.pre('save', function(next) {
 
 // Index for efficient queries
 bookingSchema.index({ propertyId: 1 });
+bookingSchema.index({ userId: 1 });
 bookingSchema.index({ status: 1 });
 bookingSchema.index({ bookingDate: -1 });
 bookingSchema.index({ checkIn: 1, checkOut: 1 });

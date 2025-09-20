@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import './BookingPage.css';
 
 const BookingPage = () => {
   const { id: propertyId } = useParams(); // Fix: use 'id' from params and alias it to propertyId
   const navigate = useNavigate();
+  const { user } = useAuth(); // Add user context
   
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -150,6 +152,7 @@ const BookingPage = () => {
     
     try {
       const bookingData = {
+        userId: user?._id, // Add userId for logged-in users
         propertyId: property._id,
         propertyTitle: property.title,
         propertyImage: property.images[0] || '',
