@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaHome, FaBed, FaCar, FaRoute, FaUserCircle, FaBars, FaTimes, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import './Header.css';
+import logo from '../assets/logo1.png';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -52,7 +53,7 @@ const Header = () => {
       <div className="header-container">
         {/* Logo */}
         <div className="logo">
-          <FaMapMarkerAlt className="logo-icon" />
+          <img src={logo} alt="logo" className="h-6 w-6 object-contain mr-2" />
           <span className="logo-text">TravelMate</span>
         </div>
 
