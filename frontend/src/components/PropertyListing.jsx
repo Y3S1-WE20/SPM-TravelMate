@@ -229,27 +229,67 @@ const HomePage = () => {
       {/* Popular Destinations */}
       <section className="popular-destinations">
         <h2>Popular Destinations in Sri Lanka</h2>
-        <div className="destinations-grid">
+          <div className="destinations-grid">
           <div className="destination-card" onClick={() => handleCityFilter('Colombo')}>
-            <div className="destination-image colombo"></div>
+            <div
+              className="destination-image"
+              style={{
+                backgroundImage: `url('/images/destinations/colombo-urban.jpg')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                width: '100%',
+                height: '160px',
+                borderRadius: '8px'
+              }}
+            />
             <h3>Colombo</h3>
             <p>Urban experiences</p>
           </div>
           
           <div className="destination-card" onClick={() => handleCityFilter('Kandy')}>
-            <div className="destination-image kandy"></div>
+            <div
+              className="destination-image"
+              style={{
+                backgroundImage: `url('/images/destinations/kandy-cultural.jpg')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                width: '100%',
+                height: '160px',
+                borderRadius: '8px'
+              }}
+            />
             <h3>Kandy</h3>
             <p>Cultural heart</p>
           </div>
           
           <div className="destination-card" onClick={() => handleCityFilter('Galle')}>
-            <div className="destination-image galle"></div>
+            <div
+              className="destination-image"
+              style={{
+                backgroundImage: `url('/images/destinations/galle-historic.jpg')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                width: '100%',
+                height: '160px',
+                borderRadius: '8px'
+              }}
+            />
             <h3>Galle</h3>
             <p>Historic charm</p>
           </div>
           
           <div className="destination-card" onClick={() => handleCityFilter('Ella')}>
-            <div className="destination-image ella"></div>
+            <div
+              className="destination-image"
+              style={{
+                backgroundImage: `url('/images/destinations/ella-mountain.jpg')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                width: '100%',
+                height: '160px',
+                borderRadius: '8px'
+              }}
+            />
             <h3>Ella</h3>
             <p>Mountain views</p>
           </div>

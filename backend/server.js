@@ -45,6 +45,31 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 
+// Debug: list all registered routes (useful for troubleshooting 404s)
+const listRoutes = () => {
+  try {
+    const routes = [];
+    app._router.stack.forEach((middleware) => {
+      if (middleware.route) {
+        // routes registered directly on the app
+        const methods = Object.keys(middleware.route.methods).join(',').toUpperCase();
+        routes.push(`${methods} ${middleware.route.path}`);
+      } else if (middleware.name === 'router' && middleware.handle && middleware.handle.stack) {
+        // router middleware
+        middleware.handle.stack.forEach((handler) => {
+          if (handler.route) {
+            const methods = Object.keys(handler.route.methods).join(',').toUpperCase();
+            routes.push(`${methods} ${handler.route.path}`);
+          }
+        });
+      }
+    });
+    console.log('Registered routes:\n' + routes.join('\n'));
+  } catch (err) {
+    console.error('Could not list routes', err.message);
+  }
+};
+
 // Basic route for health check
 app.get("/", (req, res) => {
   res.json({ message: "Travel Accommodation API is running!" });
@@ -69,5 +94,8 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log('Routes mounted: /auth, /api/properties, /api/bookings, /api/users, /api/reviews');
+});
 
