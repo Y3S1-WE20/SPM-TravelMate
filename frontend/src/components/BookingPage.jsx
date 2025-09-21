@@ -171,8 +171,16 @@ const BookingPage = () => {
       const response = await axios.post('http://localhost:5001/api/bookings', bookingData);
       
       if (response.data.success) {
-        alert('Booking submitted successfully! We will contact you soon to confirm your reservation.');
-        navigate('/');
+        // Navigate to booking summary with booking data
+        navigate('/booking-summary', { 
+          state: { 
+            bookingData: {
+              ...bookingData,
+              bookingId: response.data.booking?._id || 'TM' + Date.now().toString().slice(-6),
+              propertyLocation: property.location || property.address || `${property.city}, ${property.country}`
+            }
+          } 
+        });
       }
     } catch (error) {
       console.error('Error submitting booking:', error);

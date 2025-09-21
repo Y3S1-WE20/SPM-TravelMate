@@ -21,7 +21,7 @@ body {
 /* Hero Section */
 .hero-section {
   background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
-              url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+              url('https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg');
   background-size: cover;
   background-position: center;
   height: 80vh;
@@ -135,61 +135,6 @@ body {
 
 .search-icon {
   font-size: 1rem;
-}
-
-/* Hero CTA Buttons */
-.hero-cta-section {
-  margin-top: 30px;
-  text-align: center;
-}
-
-.hero-cta-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.hero-cta-btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 180px;
-  justify-content: center;
-}
-
-.hero-cta-primary {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: 2px solid transparent;
-}
-
-.hero-cta-primary:hover {
-  background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
-}
-
-.hero-cta-secondary {
-  background: transparent;
-  color: #007bff;
-  border: 2px solid #007bff;
-}
-
-.hero-cta-secondary:hover {
-  background: #007bff;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
 }
 
 /* Search Widget */
@@ -324,19 +269,19 @@ body {
 }
 
 .destination-image.colombo {
-  background-image: url('https://images.unsplash.com/photo-1582571352032-448f7928eca2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+  background-image: url('https://media.onyx-hospitality.com/-/media/project/amari/common/property/colombo/hotel_4share.jpg?w=1200&rev=9628174d492e49a7b8ab619f4ddd3536&hash=6940F93D665BF47791B638C64A3FF38D');
 }
 
 .destination-image.kandy {
-  background-image: url('https://images.unsplash.com/photo-1592388746746-701e39b35b86?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+  background-image: url('https://pix10.agoda.net/hotelImages/66616/0/cee199dc41afb6dd8f18382188520850.jpg?ce=2&s=702x392');
 }
 
 .destination-image.galle {
-  background-image: url('https://images.unsplash.com/photo-1596526131083-e8e67dd5d2d0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+  background-image: url('https://media.istockphoto.com/id/472387838/photo/galle-fort-lighthouse-sri-lanka.jpg?s=612x612&w=0&k=20&c=BNXhMGbPDxThnZbs1qWPmNUOVIPXAB35uuhvybIgcag=');
 }
 
 .destination-image.ella {
-  background-image: url('https://images.unsplash.com/photo-1574323820872-348177de1364?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+  background-image: url('https://www.lovidhu.com/uploads/posts/2021/05//nine-arch-bridge-demodara-sri-lanka-945x630.jpg');
 }
 
 .destination-card h3 {

@@ -11,6 +11,7 @@ import AdminLogin from './pages/AdminLogin';
 import Header from './components/Header';
 import PropertyListing from './components/PropertyListing';
 import BookingPage from './components/BookingPage';
+import BookingSummary from './components/BookingSummary';
 import AddPropertyForm from './components/AddPropertyForm';
 import AdminDashboard from './components/AdminDashboard';
 
@@ -25,6 +26,7 @@ function App() {
             <Route path="/" element={<PropertyListing />} />
             <Route path="/properties" element={<PropertyListing />} />
             <Route path="/booking/:id" element={<BookingPage />} />
+            <Route path="/booking-summary" element={<BookingSummary />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/admin-login" element={<AdminLogin />} />
