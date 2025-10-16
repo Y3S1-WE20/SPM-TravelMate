@@ -13,6 +13,46 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Property'
   }],
+  
+  // Payment tracking for users
+  paymentHistory: [{
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Payment'
+    },
+    amount: Number,
+    date: Date,
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Booking'
+    },
+    status: String
+  }],
+  
+  // Payment tracking for hotel owners
+  receivedPayments: [{
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Payment'
+    },
+    amount: Number,
+    date: Date,
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Booking'
+    },
+    propertyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Property'
+    },
+    status: String
+  }],
+  
+  totalEarnings: {
+    type: Number,
+    default: 0
+  },
+  
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
