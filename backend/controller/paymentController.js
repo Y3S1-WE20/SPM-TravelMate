@@ -57,6 +57,12 @@ export const createPayPalOrder = async (req, res) => {
     
     const accessToken = await generateAccessToken();
     
+    // Convert LKR to USD (approximate rate: 1 USD = 300 LKR)
+    const LKR_TO_USD_RATE = 300;
+    const amountInUSD = (amount / LKR_TO_USD_RATE);
+    
+    console.log(`Converting ${amount} LKR to ${amountInUSD.toFixed(2)} USD`);
+    
     const orderData = {
       intent: 'CAPTURE',
       purchase_units: [{
@@ -64,7 +70,7 @@ export const createPayPalOrder = async (req, res) => {
         description: `Booking for ${booking.propertyTitle}`,
         amount: {
           currency_code: 'USD',
-          value: amount.toFixed(2)
+          value: amountInUSD.toFixed(2)
         }
       }],
       application_context: {

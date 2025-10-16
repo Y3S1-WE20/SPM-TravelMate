@@ -43,11 +43,22 @@ const BookingPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   // PayPal configuration
+  const paypalClientId = process.env.REACT_APP_PAYPAL_CLIENT_ID;
+  
   const paypalOptions = {
-    "client-id": process.env.REACT_APP_PAYPAL_CLIENT_ID || "test",
+    "client-id": paypalClientId,
     currency: "USD",
-    intent: "capture"
+    intent: "capture",
+    "disable-funding": "credit,card" // Temporarily disable card to focus on PayPal accounts
   };
+
+  // Debug PayPal configuration
+  useEffect(() => {
+    if (step === 3) {
+      console.log('PayPal Client ID:', paypalClientId ? 'Present' : 'Missing');
+      console.log('PayPal Client ID (first 10 chars):', paypalClientId?.substring(0, 10));
+    }
+  }, [step, paypalClientId]);
 
   useEffect(() => {
     if (propertyId) {
@@ -603,33 +614,81 @@ const BookingPage = () => {
                 </div>
                 <div className="summary-item total">
                   <span>Total Amount:</span>
-                  <span className="total-amount">${totalCost.toFixed(2)} USD</span>
+                  <span className="total-amount">LKR {totalCost.toLocaleString()}</span>
+                </div>
+                <div className="summary-item" style={{ fontSize: '0.9em', color: '#666' }}>
+                  <span>PayPal Amount:</span>
+                  <span>≈ ${(totalCost / 300).toFixed(2)} USD</span>
                 </div>
               </div>
 
               <div className="payment-section">
                 <h4>Pay with PayPal</h4>
-                {paymentProcessing && (
-                  <div className="payment-processing">
-                    <p>Processing payment...</p>
-                  </div>
-                )}
                 
-                <PayPalScriptProvider options={paypalOptions}>
-                  <PayPalButtons
-                    createOrder={createOrder}
-                    onApprove={onApprove}
-                    onError={onError}
-                    onCancel={onCancel}
-                    style={{
-                      layout: "vertical",
-                      color: "gold",
-                      shape: "rect",
-                      label: "paypal"
-                    }}
-                    disabled={paymentProcessing}
-                  />
-                </PayPalScriptProvider>
+                {!paypalClientId ? (
+                  <div className="payment-error" style={{ 
+                    padding: '20px', 
+                    background: '#fff3cd', 
+                    border: '1px solid #ffc107',
+                    borderRadius: '8px',
+                    marginBottom: '15px'
+                  }}>
+                    <h5 style={{ color: '#856404', marginBottom: '10px' }}>⚠️ PayPal Configuration Error</h5>
+                    <p style={{ color: '#856404', marginBottom: '10px' }}>
+                      PayPal payment is currently unavailable. Please contact support or try again later.
+                    </p>
+                    <p style={{ color: '#666', fontSize: '0.9em' }}>
+                      Error: PayPal Client ID is not configured.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {paymentProcessing && (
+                      <div className="payment-processing">
+                        <p>Processing payment...</p>
+                      </div>
+                    )}
+                    
+                    <PayPalScriptProvider 
+                      options={paypalOptions}
+                      deferLoading={false}
+                    >
+                      <PayPalButtons
+                        createOrder={createOrder}
+                        onApprove={onApprove}
+                        onError={onError}
+                        onCancel={onCancel}
+                        style={{
+                          layout: "vertical",
+                          color: "gold",
+                          shape: "rect",
+                          label: "paypal"
+                        }}
+                        disabled={paymentProcessing}
+                        forceReRender={[totalCost]}
+                      />
+                    </PayPalScriptProvider>
+                    
+                    <div style={{ 
+                      marginTop: '15px', 
+                      padding: '15px', 
+                      background: '#f8f9fa',
+                      borderRadius: '8px',
+                      fontSize: '0.9em',
+                      color: '#666'
+                    }}>
+                      <p style={{ marginBottom: '10px' }}>
+                        <strong>Having trouble with PayPal?</strong>
+                      </p>
+                      <ul style={{ marginLeft: '20px', marginBottom: '0' }}>
+                        <li>Make sure you have a PayPal sandbox account</li>
+                        <li>Try refreshing the page (F5)</li>
+                        <li>Check your internet connection</li>
+                        <li>Clear browser cache and try again</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="payment-security-notice">
