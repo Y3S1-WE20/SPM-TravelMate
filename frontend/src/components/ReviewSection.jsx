@@ -7,6 +7,7 @@ const ReviewSection = ({ propertyId }) => {
   const [reviewStats, setReviewStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
   const [newReview, setNewReview] = useState({
     rating: 5,
     title: '',
@@ -54,18 +55,63 @@ const ReviewSection = ({ propertyId }) => {
         propertyId
       };
       
-      const response = await api.post('/api/reviews', reviewData);
-      setReviews(prev => [response.data.data, ...prev]);
+      let response;
+      if (editingReviewId) {
+        // Update existing review
+        response = await api.put(`/api/reviews/${editingReviewId}`, reviewData);
+        setReviews(prev => prev.map(r => r._id === editingReviewId ? response.data.data : r));
+        alert('Review updated successfully!');
+      } else {
+        // Create new review
+        response = await api.post('/api/reviews', reviewData);
+        setReviews(prev => [response.data.data, ...prev]);
+        alert('Review submitted successfully!');
+      }
+      
       setNewReview({ rating: 5, title: '', comment: '' });
       setShowReviewForm(false);
+      setEditingReviewId(null);
       fetchReviewStats(); // Refresh stats
-      alert('Review submitted successfully!');
     } catch (error) {
       console.error('Error submitting review:', error);
       alert(error.response?.data?.message || 'Failed to submit review');
     } finally {
       setSubmitLoading(false);
     }
+  };
+
+  const handleEditReview = (review) => {
+    setNewReview({
+      rating: review.rating,
+      title: review.title,
+      comment: review.comment
+    });
+    setEditingReviewId(review._id);
+    setShowReviewForm(true);
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/api/reviews/${reviewId}`, {
+        data: { userId: user._id }
+      });
+      setReviews(prev => prev.filter(r => r._id !== reviewId));
+      fetchReviewStats();
+      alert('Review deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      alert(error.response?.data?.message || 'Failed to delete review');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setNewReview({ rating: 5, title: '', comment: '' });
+    setShowReviewForm(false);
+    setEditingReviewId(null);
   };
 
   const renderStars = (rating) => {
@@ -150,7 +196,9 @@ const ReviewSection = ({ propertyId }) => {
           borderRadius: '8px',
           marginBottom: '20px'
         }}>
-          <h4 style={{ marginTop: 0 }}>Write Your Review</h4>
+          <h4 style={{ marginTop: 0 }}>
+            {editingReviewId ? 'Edit Your Review' : 'Write Your Review'}
+          </h4>
           
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>
@@ -228,11 +276,11 @@ const ReviewSection = ({ propertyId }) => {
                 cursor: submitLoading ? 'not-allowed' : 'pointer'
               }}
             >
-              {submitLoading ? 'Submitting...' : 'Submit Review'}
+              {submitLoading ? 'Submitting...' : editingReviewId ? 'Update Review' : 'Submit Review'}
             </button>
             <button
               type="button"
-              onClick={() => setShowReviewForm(false)}
+              onClick={handleCancelEdit}
               style={{
                 padding: '10px 20px',
                 backgroundColor: '#6c757d',
@@ -255,44 +303,84 @@ const ReviewSection = ({ propertyId }) => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {reviews.map((review) => (
-            <div key={review._id} style={{
-              padding: '20px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              backgroundColor: '#fafafa'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '10px'
+          {reviews.map((review) => {
+            const isOwnReview = user && review.userId._id === user._id;
+            
+            return (
+              <div key={review._id} style={{
+                padding: '20px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                backgroundColor: '#fafafa'
               }}>
-                <div>
-                  <h5 style={{ margin: '0 0 5px 0', color: '#333' }}>{review.title}</h5>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '10px',
-                    marginBottom: '10px'
-                  }}>
-                    <span style={{ color: '#ffc107', fontSize: '16px' }}>
-                      {renderStars(review.rating)}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: '10px'
+                }}>
+                  <div>
+                    <h5 style={{ margin: '0 0 5px 0', color: '#333' }}>{review.title}</h5>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '10px',
+                      marginBottom: '10px'
+                    }}>
+                      <span style={{ color: '#ffc107', fontSize: '16px' }}>
+                        {renderStars(review.rating)}
+                      </span>
+                      <span style={{ color: '#666', fontSize: '14px' }}>
+                        by {review.userName}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: '#999', fontSize: '12px' }}>
+                      {formatDate(review.createdAt)}
                     </span>
-                    <span style={{ color: '#666', fontSize: '14px' }}>
-                      by {review.userName}
-                    </span>
+                    {isOwnReview && (
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <button
+                          onClick={() => handleEditReview(review)}
+                          style={{
+                            padding: '5px 10px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                          title="Edit review"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReview(review._id)}
+                          style={{
+                            padding: '5px 10px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                          title="Delete review"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <span style={{ color: '#999', fontSize: '12px' }}>
-                  {formatDate(review.createdAt)}
-                </span>
+                <p style={{ margin: 0, color: '#555', lineHeight: '1.5' }}>
+                  {review.comment}
+                </p>
               </div>
-              <p style={{ margin: 0, color: '#555', lineHeight: '1.5' }}>
-                {review.comment}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

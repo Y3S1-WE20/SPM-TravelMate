@@ -1,6 +1,7 @@
 import Review from "../models/Review.js";
 import Property from "../models/Property.js";
 import User from "../models/User.js";
+import Booking from "../models/Booking.js";
 import mongoose from "mongoose";
 
 // Create a new review
@@ -23,6 +24,20 @@ export const createReview = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'User not found'
+      });
+    }
+
+    // Check if user has a completed booking for this property
+    const hasBooking = await Booking.findOne({
+      userId,
+      propertyId,
+      status: { $in: ['confirmed', 'completed'] }
+    });
+
+    if (!hasBooking) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only review properties you have booked'
       });
     }
 
