@@ -98,6 +98,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log('Routes mounted: /auth, /api/properties, /api/bookings, /api/users, /api/reviews');
+  console.log('Routes mounted: /auth, /api/properties, /api/bookings, /api/users, /api/reviews, /api/payments');
+  console.log('PayPal payment integration: ENABLED');
 });
 
