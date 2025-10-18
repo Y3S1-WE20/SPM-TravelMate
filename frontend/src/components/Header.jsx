@@ -447,7 +447,7 @@ const Header = () => {
             opacity: 1,
             scale: 1,
             rotate: isMobileMenuOpen ? 180 : 0,
-            backgroundColor: isMobileMenuOpen ? "rgba(255,255,255,0.2)" : "transparent"
+            backgroundColor: isMobileMenuOpen ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0)"
           }}
           transition={{ duration: 0.3, delay: 0.9 }}
         >

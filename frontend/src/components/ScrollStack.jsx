@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useCallback } from 'react';
+import { useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import Lenis from 'lenis';
 import './ScrollStack.css';
 
@@ -28,19 +28,24 @@ const ScrollStack = ({
   const cardsRef = useRef([]);
   const lastTransformsRef = useRef(new Map());
   const isUpdatingRef = useRef(false);
+  const rafIdRef = useRef(null);
+  const lastScrollTimeRef = useRef(0);
+  const scrollThrottleRef = useRef(16); // ~60fps
 
-  const calculateProgress = useCallback((scrollTop, start, end) => {
-    if (scrollTop < start) return 0;
-    if (scrollTop > end) return 1;
-    return (scrollTop - start) / (end - start);
-  }, []);
-
-  const parsePercentage = useCallback((value, containerHeight) => {
-    if (typeof value === 'string' && value.includes('%')) {
-      return (parseFloat(value) / 100) * containerHeight;
+  // Memoize expensive calculations
+  const memoizedValues = useMemo(() => ({
+    calculateProgress: (scrollTop, start, end) => {
+      if (scrollTop < start) return 0;
+      if (scrollTop > end) return 1;
+      return (scrollTop - start) / (end - start);
+    },
+    parsePercentage: (value, containerHeight) => {
+      if (typeof value === 'string' && value.includes('%')) {
+        return (parseFloat(value) / 100) * containerHeight;
+      }
+      return parseFloat(value);
     }
-    return parseFloat(value);
-  }, []);
+  }), []);
 
   const getScrollData = useCallback(() => {
     if (useWindowScroll) {
@@ -77,14 +82,24 @@ const ScrollStack = ({
     isUpdatingRef.current = true;
 
     const { scrollTop, containerHeight } = getScrollData();
-    const stackPositionPx = parsePercentage(stackPosition, containerHeight);
-    const scaleEndPositionPx = parsePercentage(scaleEndPosition, containerHeight);
+    const stackPositionPx = memoizedValues.parsePercentage(stackPosition, containerHeight);
+    const scaleEndPositionPx = memoizedValues.parsePercentage(scaleEndPosition, containerHeight);
 
     const endElement = useWindowScroll
       ? document.querySelector('.scroll-stack-end')
       : scrollerRef.current?.querySelector('.scroll-stack-end');
 
     const endElementTop = endElement ? getElementOffset(endElement) : 0;
+
+    // Pre-calculate top card index for blur optimization
+    let topCardIndex = 0;
+    for (let j = 0; j < cardsRef.current.length; j++) {
+      const jCardTop = getElementOffset(cardsRef.current[j]);
+      const jTriggerStart = jCardTop - stackPositionPx - itemStackDistance * j;
+      if (scrollTop >= jTriggerStart) {
+        topCardIndex = j;
+      }
+    }
 
     cardsRef.current.forEach((card, i) => {
       if (!card) return;
@@ -95,26 +110,16 @@ const ScrollStack = ({
       const pinStart = cardTop - stackPositionPx - itemStackDistance * i;
       const pinEnd = endElementTop - containerHeight / 2;
 
-      const scaleProgress = calculateProgress(scrollTop, triggerStart, triggerEnd);
+      const scaleProgress = memoizedValues.calculateProgress(scrollTop, triggerStart, triggerEnd);
       const targetScale = baseScale + i * itemScale;
       const scale = 1 - scaleProgress * (1 - targetScale);
       const rotation = rotationAmount ? i * rotationAmount * scaleProgress : 0;
 
+      // Optimized blur calculation
       let blur = 0;
-      if (blurAmount) {
-        let topCardIndex = 0;
-        for (let j = 0; j < cardsRef.current.length; j++) {
-          const jCardTop = getElementOffset(cardsRef.current[j]);
-          const jTriggerStart = jCardTop - stackPositionPx - itemStackDistance * j;
-          if (scrollTop >= jTriggerStart) {
-            topCardIndex = j;
-          }
-        }
-
-        if (i < topCardIndex) {
-          const depthInStack = topCardIndex - i;
-          blur = Math.max(0, depthInStack * blurAmount);
-        }
+      if (blurAmount && i < topCardIndex) {
+        const depthInStack = topCardIndex - i;
+        blur = Math.max(0, depthInStack * blurAmount);
       }
 
       let translateY = 0;
@@ -142,11 +147,14 @@ const ScrollStack = ({
         Math.abs(lastTransform.blur - newTransform.blur) > 0.1;
 
       if (hasChanged) {
+        // Use transform3d for better performance
         const transform = `translate3d(0, ${newTransform.translateY}px, 0) scale(${newTransform.scale}) rotate(${newTransform.rotation}deg)`;
-        const filter = newTransform.blur > 0 ? `blur(${newTransform.blur}px)` : '';
+        const filter = newTransform.blur > 0 ? `blur(${newTransform.blur}px)` : 'none';
 
-        card.style.transform = transform;
-        card.style.filter = filter;
+        // Batch style updates for better performance
+        const style = card.style;
+        style.transform = transform;
+        style.filter = filter;
 
         lastTransformsRef.current.set(i, newTransform);
       }
@@ -173,15 +181,26 @@ const ScrollStack = ({
     blurAmount,
     useWindowScroll,
     onStackComplete,
-    calculateProgress,
-    parsePercentage,
+    memoizedValues,
     getScrollData,
     getElementOffset
   ]);
 
-  const handleScroll = useCallback(() => {
-    updateCardTransforms();
+  // Throttled scroll handler using requestAnimationFrame
+  const throttledScrollHandler = useCallback(() => {
+    const now = Date.now();
+    if (now - lastScrollTimeRef.current >= scrollThrottleRef.current) {
+      lastScrollTimeRef.current = now;
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+      rafIdRef.current = requestAnimationFrame(updateCardTransforms);
+    }
   }, [updateCardTransforms]);
+
+  const handleScroll = useCallback(() => {
+    throttledScrollHandler();
+  }, [throttledScrollHandler]);
 
   const setupLenis = useCallback(() => {
     if (useWindowScroll) {
@@ -259,6 +278,7 @@ const ScrollStack = ({
       if (i < cards.length - 1) {
         card.style.marginBottom = `${itemDistance}px`;
       }
+      // Enhanced performance optimizations
       card.style.willChange = 'transform, filter';
       card.style.transformOrigin = 'top center';
       card.style.backfaceVisibility = 'hidden';
@@ -266,15 +286,21 @@ const ScrollStack = ({
       card.style.webkitTransform = 'translateZ(0)';
       card.style.perspective = '1000px';
       card.style.webkitPerspective = '1000px';
+      card.style.contain = 'layout style paint';
+      card.style.contentVisibility = 'auto';
     });
 
     setupLenis();
 
+    // Initial transform calculation
     updateCardTransforms();
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
       }
       if (lenisRef.current) {
         lenisRef.current.destroy();
@@ -283,6 +309,7 @@ const ScrollStack = ({
       cardsRef.current = [];
       transformsCache.clear();
       isUpdatingRef.current = false;
+      lastScrollTimeRef.current = 0;
     };
   }, [
     itemDistance,

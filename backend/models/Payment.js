@@ -112,15 +112,15 @@ const paymentSchema = new mongoose.Schema({
 paymentSchema.index({ bookingId: 1 });
 paymentSchema.index({ userId: 1 });
 paymentSchema.index({ propertyOwnerId: 1 });
-paymentSchema.index({ paypalOrderId: 1 });
+// paypalOrderId already has unique: true, no need for separate index
 paymentSchema.index({ status: 1 });
 paymentSchema.index({ createdAt: -1 });
 
-// Calculate owner payout (95% to owner, 5% platform fee)
+// Calculate owner payout (85% to owner, 15% platform fee)
 paymentSchema.pre('save', function(next) {
   if (this.isModified('amount') && !this.ownerPayout) {
-    this.platformFee = this.amount * 0.05; // 5% platform fee
-    this.ownerPayout = this.amount * 0.95; // 95% to owner
+    this.platformFee = this.amount * 0.15; // 15% platform fee
+    this.ownerPayout = this.amount * 0.85; // 85% to owner
   }
   next();
 });

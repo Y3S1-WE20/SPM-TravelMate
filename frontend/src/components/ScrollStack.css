@@ -33,10 +33,103 @@
   padding: 3rem;
   border-radius: 40px;
   box-sizing: border-box;
-  /* Improve mobile performance */
+  /* Enhanced performance optimizations */
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  contain: layout style paint;
+  content-visibility: auto;
   position: relative;
+  overflow: hidden;
+  /* Optimize for GPU acceleration */
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
+}
+
+/* Enhanced card content styles for better readability over images */
+.stack-card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  position: relative;
+  z-index: 2;
+}
+
+.stack-card-content * {
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.stack-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stack-card-header h3 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.stack-icon {
+  font-size: 2.5rem;
+  color: white !important;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.stack-card-content p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.stack-card-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: auto;
+}
+
+.stack-card-features span {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white !important;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Individual card color themes */
+.beach-card {
+  background: linear-gradient(135deg, rgba(0, 123, 255, 0.8), rgba(0, 200, 255, 0.6)) !important;
+}
+
+.mountain-card {
+  background: linear-gradient(135deg, rgba(34, 139, 34, 0.8), rgba(50, 205, 50, 0.6)) !important;
+}
+
+.cultural-card {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.8), rgba(255, 165, 0, 0.6)) !important;
+}
+
+.culinary-card {
+  background: linear-gradient(135deg, rgba(255, 69, 0, 0.8), rgba(255, 99, 71, 0.6)) !important;
+}
+
+.adventure-card {
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.8), rgba(255, 0, 0, 0.6)) !important;
 }
 
 .scroll-stack-end {
