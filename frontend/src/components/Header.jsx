@@ -85,6 +85,14 @@ const Header = () => {
           </Link>
           
           <Link 
+            to="/vehicles" 
+            className={`nav-item ${isActive('/vehicles') ? 'active' : ''}`}
+          >
+            <FaCar className="nav-icon" />
+            <span>Vehicles</span>
+          </Link>
+          
+          <Link 
             to="/tours" 
             className={`nav-item ${isActive('/tours') ? 'active' : ''}`}
           >
@@ -185,6 +193,15 @@ const Header = () => {
         >
           <FaCar className="nav-icon" />
           <span>List Property</span>
+        </Link>
+        
+        <Link 
+          to="/vehicles" 
+          className={`mobile-nav-item ${isActive('/vehicles') ? 'active' : ''}`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <FaCar className="nav-icon" />
+          <span>Vehicles</span>
         </Link>
         
         <Link 

@@ -11,6 +11,9 @@ import AdminLogin from './pages/AdminLogin';
 import Header from './components/Header';
 import PropertyListing from './components/PropertyListing';
 import BookingPage from './components/BookingPage';
+import VehicleListing from './components/VehicleListing';
+import AdminAddVehicle from './components/AdminAddVehicle';
+import VehicleReserve from './components/VehicleReserve';
 import AddPropertyForm from './components/AddPropertyForm';
 import AdminDashboard from './components/AdminDashboard';
 
@@ -25,6 +28,8 @@ function App() {
             <Route path="/" element={<PropertyListing />} />
             <Route path="/properties" element={<PropertyListing />} />
             <Route path="/booking/:id" element={<BookingPage />} />
+            <Route path="/vehicle/:id/reserve" element={<VehicleReserve />} />
+            <Route path="/vehicles" element={<VehicleListing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/admin-login" element={<AdminLogin />} />
@@ -45,6 +50,14 @@ function App() {
                   <AdminDashboard />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/admin/add-vehicle" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminAddVehicle />
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/add-property" 
