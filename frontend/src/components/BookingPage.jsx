@@ -16,6 +16,7 @@ const BookingPage = () => {
   const [currentBookingId, setCurrentBookingId] = useState(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [sdkLoadFailed, setSdkLoadFailed] = useState(false);
+  const [sdkLoaded, setSdkLoaded] = useState(false);
   
   // Availability Selection State
   const [availabilityData, setAvailabilityData] = useState({
@@ -62,24 +63,38 @@ const BookingPage = () => {
       if (paypalClientId) console.log('PayPal Client ID (first 10 chars):', paypalClientId.substring(0, 10));
 
       // Check if the PayPal JS SDK has been attached to window
-      if (typeof window !== 'undefined') {
-        console.log('window.paypal available:', !!window.paypal);
-        if (!window.paypal) {
-          console.warn('PayPal SDK not found on window. The SDK script may have failed to load.');
+      const checkSdk = () => {
+        if (typeof window !== 'undefined') {
+          console.log('window.paypal available:', !!window.paypal);
+          if (window.paypal) {
+            setSdkLoaded(true);
+            setSdkLoadFailed(false);
+          } else {
+            // Retry after a short delay
+            setTimeout(checkSdk, 1000);
+          }
         }
-      }
+      };
+      checkSdk();
     }
   }, [bookingStep, paypalClientId]);
 
   const fetchProperty = useCallback(async () => {
     try {
-      console.log('Fetching property with ID:', propertyId); // Debug log
+      // Skip fetching if propertyId is not a valid MongoDB ObjectId (e.g., "success", "cancel")
+      if (!propertyId || propertyId === 'success' || propertyId === 'cancel' || propertyId.length !== 24) {
+        console.log('Invalid property ID:', propertyId);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching property with ID:', propertyId);
       const response = await axios.get(`http://localhost:5001/api/properties/${propertyId}`);
-      console.log('Property response:', response.data); // Debug log
+      console.log('Property response:', response.data);
       setProperty(response.data.data);
     } catch (error) {
       console.error('Error fetching property:', error);
-      console.error('Error details:', error.response?.data); // More detailed error log
+      console.error('Error details:', error.response?.data);
       navigate('/');
     } finally {
       setLoading(false);
@@ -274,14 +289,21 @@ const BookingPage = () => {
       setPaymentProcessing(true);
       console.log('onApprove payload:', data);
 
-      // Notify backend that PayPal approved the payment
+      // Capture the payment first
+      const details = await actions.order.capture();
+      console.log('PayPal capture details:', details);
+
+      // Notify backend that PayPal approved and captured the payment
       const payload = {
         appointmentId: currentBookingId,
         paypalOrderId: data.orderID,
         payerId: data.payerID,
         amount: parseFloat((totalCost / 300).toFixed(2)), // amount in USD used for PayPal order
-        userId: user?._id || null
+        userId: user?._id || null,
+        captureDetails: details
       };
+
+      console.log('Sending to backend:', payload);
 
       const endpoint = '/api/payments/complete';
       const response = await axios.post(`http://localhost:5001${endpoint}`, payload);
@@ -293,11 +315,17 @@ const BookingPage = () => {
         navigate('/dashboard');
       } else {
         console.error('Payment completion failed on server:', response.data);
-        alert('Payment completed by PayPal but server failed to record it. Please contact support.');
+        alert('Payment completed by PayPal but server failed to record it. Please contact support with order ID: ' + data.orderID);
       }
     } catch (error) {
       console.error('Error completing payment with backend:', error);
-      alert('Error processing payment. Please contact support.');
+      console.error('Error response data:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Full error:', error);
+      
+      // Show detailed error message
+      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      alert(`Error processing payment: ${errorMsg}\n\nYour PayPal payment was successful (Order ID: ${data.orderID}). Please contact support to confirm your booking.`);
     } finally {
       setPaymentProcessing(false);
     }
@@ -705,34 +733,45 @@ const BookingPage = () => {
                       </div>
                     )}
                     
-                    {(!sdkLoadFailed) ? (
-                      <PayPalScriptProvider 
-                        options={paypalOptions}
-                        deferLoading={false}
+                    <PayPalScriptProvider 
+                      options={paypalOptions}
+                      deferLoading={false}
+                    >
+                      <PayPalButtons
+                        createOrder={createOrder}
+                        onApprove={onApprove}
+                        onError={onError}
+                        onCancel={onCancel}
+                        style={{
+                          layout: "vertical",
+                          color: "gold",
+                          shape: "rect",
+                          label: "paypal"
+                        }}
+                        disabled={paymentProcessing}
+                        forceReRender={[totalCost]}
+                      />
+                    </PayPalScriptProvider>
+                    
+                    <div style={{ textAlign: 'center', marginTop: '15px' }}>
+                      <p style={{ fontSize: '0.9em', color: '#666' }}>Or</p>
+                      <button 
+                        className="btn-paypal-hosted" 
+                        onClick={handleHostedCheckout} 
+                        disabled={paymentProcessing}
+                        style={{
+                          padding: '10px 20px',
+                          background: '#0070ba',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
                       >
-                        <PayPalButtons
-                          createOrder={createOrder}
-                          onApprove={onApprove}
-                          onError={onError}
-                          onCancel={onCancel}
-                          style={{
-                            layout: "vertical",
-                            color: "gold",
-                            shape: "rect",
-                            label: "paypal"
-                          }}
-                          disabled={paymentProcessing}
-                          forceReRender={[totalCost]}
-                        />
-                      </PayPalScriptProvider>
-                    ) : (
-                      <div style={{ textAlign: 'center' }}>
-                        <p style={{ color: '#333' }}>PayPal SDK unavailable — use hosted checkout</p>
-                        <button className="btn-paypal-hosted" onClick={handleHostedCheckout} disabled={paymentProcessing}>
-                          {paymentProcessing ? 'Redirecting...' : 'Pay on PayPal'}
-                        </button>
-                      </div>
-                    )}
+                        {paymentProcessing ? 'Redirecting...' : 'Pay on PayPal Website'}
+                      </button>
+                    </div>
                     
                     <div style={{ 
                       marginTop: '15px', 

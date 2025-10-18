@@ -19,6 +19,7 @@ const generateAccessToken = async () => {
     console.log('DEBUG PayPal env: clientId present=', !!clientId, 'clientId(first10)=', clientId ? clientId.substring(0,10) : null, 'secret present=', !!clientSecret);
     
     if (!clientId || !clientSecret) {
+      console.error('PayPal credentials are missing in backend environment');
       throw new Error('PayPal credentials are not configured properly');
     }
     
@@ -65,24 +66,29 @@ const generateAccessToken = async () => {
 export const createPayPalOrder = async (req, res) => {
   try {
     const { bookingId, amount } = req.body;
+    console.log('Creating PayPal order for bookingId:', bookingId, 'amount:', amount);
     
     // Validate booking exists
     const booking = await Booking.findById(bookingId).populate('propertyId');
     if (!booking) {
+      console.error('Booking not found for id:', bookingId);
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
       });
     }
+    console.log('Booking found:', booking._id);
     
     // Get property owner
     const property = await Property.findById(booking.propertyId);
     if (!property) {
+      console.error('Property not found for id:', booking.propertyId);
       return res.status(404).json({
         success: false,
         message: 'Property not found'
       });
     }
+    console.log('Property found:', property._id);
     
   const accessToken = await generateAccessToken();
   console.log('✅ PayPal access token generated successfully');
@@ -104,8 +110,8 @@ export const createPayPalOrder = async (req, res) => {
         }
       }],
       application_context: {
-        return_url: `${process.env.FRONTEND_URL}/booking/success`,
-        cancel_url: `${process.env.FRONTEND_URL}/booking/cancel`,
+        return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?payment=success`,
+        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?payment=cancelled`,
         brand_name: 'TravelMate',
         user_action: 'PAY_NOW'
       }
@@ -172,8 +178,10 @@ export const createPayPalOrder = async (req, res) => {
       const payment = new Payment({
         bookingId: booking._id,
         userId: booking.userId,
-        // Use ownerId from Property (field is `ownerId`) - fallback to booking.userId if missing
-        propertyOwnerId: property.ownerId || booking.userId,
+        // Use ownerId from Property, fallback to booking.userId if invalid
+        propertyOwnerId: (property.ownerId && mongoose.Types.ObjectId.isValid(property.ownerId)) 
+          ? property.ownerId 
+          : booking.userId,
         propertyId: property._id,
         amount: amount,
         currency: 'USD',
@@ -356,153 +364,252 @@ export const completePayment = async (req, res) => {
     let bookingId;
     try { bookingId = apptObj; } catch (e) { bookingId = apptObj; }
 
-    // Prevent duplicate payments by checking paypalOrderId
+    // Check if payment already exists for this order
     const existing = await Payment.findOne({ paypalOrderId: orderId });
-    if (existing) {
-      console.log('Payment already exists for order ID:', orderId, 'status=', existing.status);
-      // If it's already completed, return success
-      if (existing.status === 'completed') {
-        return res.json({ success: true, message: 'Payment already completed', paymentId: existing._id });
-      }
+    if (existing && existing.status === 'completed') {
+      console.log('Payment already completed for order ID:', orderId);
+      return res.json({ 
+        success: true, 
+        message: 'Payment already completed', 
+        paymentId: existing._id,
+        bookingId: existing.bookingId 
+      });
+    }
 
-      // If the payment exists but is not completed, try to capture the PayPal order now
-      try {
-        console.log('Attempting to capture PayPal order for existing payment:', orderId);
-        const accessToken = await generateAccessToken();
-        const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
-        const capRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
-          method: 'POST',
+    // Check if captureDetails are provided (frontend already captured)
+    let capData = body.captureDetails;
+    
+    if (!capData || capData.status !== 'COMPLETED') {
+      // If not captured by frontend, try to capture on backend
+      console.log('Capturing PayPal order on backend:', orderId);
+      const accessToken = await generateAccessToken();
+      const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'production' 
+        ? 'https://api-m.paypal.com' 
+        : 'https://api-m.sandbox.paypal.com';
+        
+      const capRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      
+      capData = await capRes.json();
+      console.log('PayPal capture response:', capRes.status, capData?.status || capData);
+
+      // Handle already captured case (422 error)
+      if (capData.name === 'UNPROCESSABLE_ENTITY' && 
+          capData.details?.[0]?.issue === 'ORDER_ALREADY_CAPTURED') {
+        console.log('Order already captured by frontend, retrieving order details...');
+        
+        // Get order details instead
+        const orderRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}`, {
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`
           }
         });
-        const capData = await capRes.json();
-        console.log('PayPal capture response:', capRes.status, capData?.status || capData);
+        
+        capData = await orderRes.json();
+        console.log('Retrieved order details:', capData?.status);
+      }
 
-        if (capData.status === 'COMPLETED') {
-          // Update existing payment record
-          existing.status = 'completed';
-          existing.paymentDate = new Date();
-          existing.paypalPayerId = capData.payer?.payer_id;
-          existing.paypalPaymentId = capData.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+      if (capData.status !== 'COMPLETED') {
+        console.error('PayPal capture/retrieval failed:', capData);
+        
+        // Update existing payment if it exists
+        if (existing) {
+          existing.status = 'failed';
           existing.paypalResponse = capData;
           await existing.save();
-
-          // Update booking
-          try {
-            const bookingToUpdate = await Booking.findById(existing.bookingId);
-            if (bookingToUpdate) {
-              bookingToUpdate.status = 'confirmed';
-              await bookingToUpdate.save();
-            }
-          } catch (e) {
-            console.warn('Could not update booking status after capture:', e.message);
-          }
-
-          // Update user and owner histories
-          try {
-            if (existing.userId) {
-              await User.findByIdAndUpdate(existing.userId, {
-                $push: { paymentHistory: { paymentId: existing._id, amount: existing.amount, date: existing.paymentDate, bookingId: existing.bookingId, status: 'completed' } }
-              });
-            }
-            if (existing.propertyOwnerId) {
-              await User.findByIdAndUpdate(existing.propertyOwnerId, {
-                $push: { receivedPayments: { paymentId: existing._id, amount: existing.ownerPayout || existing.amount, date: existing.paymentDate, bookingId: existing.bookingId, propertyId: existing.propertyId, status: 'completed' } },
-                $inc: { totalEarnings: existing.ownerPayout || 0 }
-              });
-            }
-          } catch (e) {
-            console.warn('Could not update user/owner payment histories after capture:', e.message);
-          }
-
-          return res.json({ success: true, message: 'Payment captured and recorded', paymentId: existing._id, captureDetails: capData });
         }
+        
+        return res.status(400).json({ 
+          success: false, 
+          message: 'PayPal capture did not complete', 
+          data: capData 
+        });
+      }
+    } else {
+      console.log('Using capture details from frontend, status:', capData.status);
+    }
 
-        // If capture didn't complete, return the capture data for debugging
-        existing.paypalResponse = capData;
-        existing.status = 'failed';
-        await existing.save();
-        return res.status(400).json({ success: false, message: 'PayPal capture did not complete', data: capData });
-      } catch (captureErr) {
-        console.error('Error capturing existing PayPal order:', captureErr);
-        return res.status(500).json({ success: false, message: 'Error capturing PayPal order for existing payment', error: captureErr.message });
+    // Get booking and property info
+    let booking = null;
+    try { 
+      booking = await Booking.findById(bookingId).populate('propertyId');
+      console.log('Booking found:', booking?._id);
+    } catch (e) { 
+      console.error('Error fetching booking:', e.message);
+    }
+
+    let property = null;
+    let propertyOwnerId = null;
+    
+    if (booking && booking.propertyId) {
+      // If propertyId is already populated (object), use it directly
+      if (booking.propertyId._id) {
+        property = booking.propertyId;
+        propertyOwnerId = property.ownerId || property.owner;
+      } else {
+        // Otherwise fetch the property
+        try { 
+          property = await Property.findById(booking.propertyId);
+          propertyOwnerId = property?.ownerId || property?.owner;
+          console.log('Property found:', property?._id, 'Owner:', propertyOwnerId);
+        } catch (e) { 
+          console.error('Error fetching property:', e.message);
+        }
       }
     }
 
-    // Try to find booking and property info
-    let booking = null;
-    try { booking = await Booking.findById(bookingId); } catch (e) { /* ignore */ }
-
-    let property = null;
-    if (booking && booking.propertyId) {
-      try { property = await Property.findById(booking.propertyId); } catch (e) { /* ignore */ }
+    // Validate required fields
+    if (!propertyOwnerId) {
+      console.error('Property owner ID not found for booking:', bookingId);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Property owner information is missing. Cannot complete payment.' 
+      });
     }
 
-    // Create payment record
-    const payment = new Payment({
-      bookingId: booking?._id || bookingId,
-      userId: booking?.userId || userId || null,
-      propertyOwnerId: property?.owner || null,
-      propertyId: property?._id || (booking ? booking.propertyId : null),
-      amount: amount,
-      currency: 'USD',
-      paypalOrderId: orderId,
-      status: 'completed',
-      guestEmail: booking?.guestInfo?.email || null,
-      guestName: booking ? `${booking.guestInfo?.firstName || ''} ${booking.guestInfo?.lastName || ''}`.trim() : null,
-      paymentDate: new Date(),
-      paymentMethod: 'PayPal'
-    });
-
-    let savedPayment;
-    try {
-      savedPayment = await payment.save();
-      console.log('✅ Payment saved with id:', savedPayment._id);
-    } catch (dbErr) {
-      console.error('Error saving payment:', dbErr);
-      return res.status(500).json({ success: false, message: 'Failed to save payment', error: dbErr.message });
+    if (!property?._id) {
+      console.error('Property ID not found for booking:', bookingId);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Property information is missing. Cannot complete payment.' 
+      });
     }
 
-    // Update booking status if applicable
+    // Update or create payment record
+    let payment;
+    if (existing) {
+      // Update existing payment
+      payment = existing;
+      payment.status = 'completed';
+      payment.paymentDate = new Date();
+      payment.paypalPayerId = capData.payer?.payer_id;
+      payment.paypalPaymentId = capData.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+      payment.paypalResponse = capData;
+      
+      // Ensure required fields are set
+      if (!payment.propertyOwnerId && propertyOwnerId) {
+        payment.propertyOwnerId = propertyOwnerId;
+      }
+      if (!payment.propertyId && property?._id) {
+        payment.propertyId = property._id;
+      }
+      
+      await payment.save();
+      console.log('✅ Payment updated with id:', payment._id);
+    } else {
+      // Create new payment record
+      payment = new Payment({
+        bookingId: booking?._id || bookingId,
+        userId: booking?.userId || userId || null,
+        propertyOwnerId: propertyOwnerId,
+        propertyId: property._id,
+        amount: amount,
+        currency: 'USD',
+        paypalOrderId: orderId,
+        status: 'completed',
+        paymentDate: new Date(),
+        paypalPayerId: capData.payer?.payer_id,
+        paypalPaymentId: capData.purchase_units?.[0]?.payments?.captures?.[0]?.id,
+        paypalResponse: capData,
+        guestEmail: booking?.guestInfo?.email || null,
+        guestName: booking ? `${booking.guestInfo?.firstName || ''} ${booking.guestInfo?.lastName || ''}`.trim() : null,
+        paymentMethod: 'PayPal',
+        ownerPayout: amount * 0.85 // 85% to owner, 15% platform fee
+      });
+
+      try {
+        payment = await payment.save();
+        console.log('✅ Payment saved with id:', payment._id);
+      } catch (dbErr) {
+        console.error('Error saving payment:', dbErr);
+        console.error('Payment data that failed:', {
+          bookingId: payment.bookingId,
+          propertyOwnerId: payment.propertyOwnerId,
+          propertyId: payment.propertyId,
+          amount: payment.amount
+        });
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Failed to save payment: ' + dbErr.message, 
+          error: dbErr.message 
+        });
+      }
+    }
+
+    // Update booking status to confirmed
     if (booking) {
       try {
         booking.status = 'confirmed';
         await booking.save();
-        console.log('Booking status updated to confirmed for', booking._id);
+        console.log('✅ Booking status updated to confirmed for', booking._id);
       } catch (e) {
         console.warn('Could not update booking status:', e.message);
       }
     }
 
     // Update user payment history
-    if (savedPayment.userId) {
+    if (payment.userId) {
       try {
-        await User.findByIdAndUpdate(savedPayment.userId, {
-          $push: { paymentHistory: { paymentId: savedPayment._id, amount: savedPayment.amount, date: savedPayment.paymentDate, bookingId: savedPayment.bookingId, status: 'completed' } }
+        await User.findByIdAndUpdate(payment.userId, {
+          $push: { 
+            paymentHistory: { 
+              paymentId: payment._id, 
+              amount: payment.amount, 
+              date: payment.paymentDate, 
+              bookingId: payment.bookingId, 
+              status: 'completed' 
+            } 
+          }
         });
+        console.log('✅ User payment history updated');
       } catch (e) {
         console.warn('Could not update user payment history:', e.message);
       }
     }
 
     // Update owner receivedPayments and totals
-    if (savedPayment.propertyOwnerId) {
+    if (payment.propertyOwnerId) {
       try {
-        await User.findByIdAndUpdate(savedPayment.propertyOwnerId, {
-          $push: { receivedPayments: { paymentId: savedPayment._id, amount: savedPayment.ownerPayout || savedPayment.amount, date: savedPayment.paymentDate, bookingId: savedPayment.bookingId, propertyId: savedPayment.propertyId, status: 'completed' } },
-          $inc: { totalEarnings: savedPayment.ownerPayout || 0 }
+        await User.findByIdAndUpdate(payment.propertyOwnerId, {
+          $push: { 
+            receivedPayments: { 
+              paymentId: payment._id, 
+              amount: payment.ownerPayout || payment.amount, 
+              date: payment.paymentDate, 
+              bookingId: payment.bookingId, 
+              propertyId: payment.propertyId, 
+              status: 'completed' 
+            } 
+          },
+          $inc: { totalEarnings: payment.ownerPayout || 0 }
         });
+        console.log('✅ Owner payment history updated');
       } catch (e) {
         console.warn('Could not update owner payments:', e.message);
       }
     }
 
-    return res.json({ success: true, message: 'Payment completed successfully', paymentId: savedPayment._id, appointmentId: bookingId, transactionId: orderId });
+    return res.json({ 
+      success: true, 
+      message: 'Payment completed successfully', 
+      paymentId: payment._id, 
+      bookingId: payment.bookingId,
+      transactionId: orderId 
+    });
   } catch (error) {
     console.error('completePayment error:', error);
-    return res.status(500).json({ success: false, message: 'Payment completion failed', error: error.message });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Payment completion failed', 
+      error: error.message 
+    });
   }
 };
 

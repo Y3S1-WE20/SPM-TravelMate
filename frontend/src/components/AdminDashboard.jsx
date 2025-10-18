@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import PropertyTable from './PropertyTable';
-import BookingTable from './BookingTable';
+import DashboardLayout from './DashboardLayout';
+import StatCard from './StatCard';
+import DataTable from './DataTable';
 import StatsDashboard from './StatsDashboard';
-import './AdminDashboard.css';
+import './Dashboard.css';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('overview');
   const [properties, setProperties] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState(null);
   const [bookingStats, setBookingStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, pending, approved, rejected
-  const [bookingFilter, setBookingFilter] = useState('all'); // all, pending, confirmed, cancelled, completed
+  const [filter, setFilter] = useState('all');
+  const [bookingFilter, setBookingFilter] = useState('all');
   const [vehicleReservations, setVehicleReservations] = useState([]);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ const AdminDashboard = () => {
       fetchBookings();
       fetchBookingStats();
     }
-    if (activeTab === 'vehicleReservations') {
+    if (activeTab === 'vehicles') {
       fetchVehicleReservations();
     }
   }, [filter, bookingFilter, activeTab]);
@@ -87,7 +88,7 @@ const AdminDashboard = () => {
         status,
         adminNotes: notes
       });
-      
+
       // Refresh data
       fetchProperties();
       fetchStats();
@@ -98,15 +99,12 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteProperty = async (propertyId) => {
-    // Find the property to get its title for the confirmation
     const property = properties.find(p => p._id === propertyId);
     const propertyTitle = property ? property.title : 'this property';
-    
+
     if (window.confirm(`Are you sure you want to permanently delete "${propertyTitle}"?\n\nThis action cannot be undone and will remove all associated data including images.`)) {
       try {
         await axios.delete(`http://localhost:5001/api/properties/${propertyId}`);
-        
-        // Refresh data
         fetchProperties();
         fetchStats();
         alert('Property deleted successfully');
@@ -139,133 +137,232 @@ const AdminDashboard = () => {
     }
   };
 
-  if (loading && activeTab === 'properties') {
-    return <div className="loading">Loading properties...</div>;
-  }
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'properties', label: 'Property Management', icon: '🏨', badge: properties.length },
+    { id: 'bookings', label: 'Booking Management', icon: '📅', badge: bookings.length },
+    { id: 'vehicles', label: 'Vehicle Reservations', icon: '🚗', badge: vehicleReservations.length }
+  ];
+
+  const headerActions = [
+    {
+      label: 'Add Vehicle',
+      icon: '➕',
+      variant: 'btn-success',
+      onClick: () => window.location.href = '/admin/add-vehicle'
+    }
+  ];
+
+  const propertyColumns = [
+    { key: 'title', label: 'Property Title', width: '25%' },
+    { key: 'owner', label: 'Owner', width: '20%', render: (value) => value?.username || 'N/A' },
+    { key: 'city', label: 'Location', width: '15%' },
+    { key: 'price', label: 'Price (LKR)', width: '15%', render: (value) => value?.toLocaleString() || 'N/A' },
+    {
+      key: 'status',
+      label: 'Status',
+      width: '15%',
+      render: (value) => (
+        <span className={`status-badge ${value?.toLowerCase()}`}>
+          {value || 'Unknown'}
+        </span>
+      )
+    }
+  ];
+
+  const propertyActions = [
+    {
+      label: 'Approve',
+      icon: '✅',
+      variant: 'btn-success',
+      onClick: (property) => handleStatusUpdate(property._id, 'approved'),
+      disabled: (property) => property.status === 'approved'
+    },
+    {
+      label: 'Reject',
+      icon: '❌',
+      variant: 'btn-error',
+      onClick: (property) => handleStatusUpdate(property._id, 'rejected'),
+      disabled: (property) => property.status === 'rejected'
+    },
+    {
+      label: 'Delete',
+      icon: '🗑️',
+      variant: 'btn-error',
+      onClick: (property) => handleDeleteProperty(property._id)
+    }
+  ];
+
+  const bookingColumns = [
+    { key: 'bookingReference', label: 'Booking ID', width: '15%' },
+    { key: 'propertyId', label: 'Property', width: '25%', render: (value) => value?.title || 'N/A' },
+    { key: 'guestInfo', label: 'Guest', width: '20%', render: (value) => `${value?.firstName || ''} ${value?.lastName || ''}`.trim() || 'N/A' },
+    { key: 'checkIn', label: 'Check-in', width: '15%', render: (value) => new Date(value).toLocaleDateString() },
+    {
+      key: 'status',
+      label: 'Status',
+      width: '15%',
+      render: (value) => (
+        <span className={`status-badge ${value?.toLowerCase()}`}>
+          {value || 'Unknown'}
+        </span>
+      )
+    }
+  ];
+
+  const bookingActions = [
+    {
+      label: 'Confirm',
+      icon: '✅',
+      variant: 'btn-success',
+      onClick: (booking) => handleBookingStatusUpdate(booking._id, 'confirmed'),
+      disabled: (booking) => booking.status === 'confirmed'
+    },
+    {
+      label: 'Cancel',
+      icon: '❌',
+      variant: 'btn-error',
+      onClick: (booking) => handleBookingStatusUpdate(booking._id, 'cancelled'),
+      disabled: (booking) => booking.status === 'cancelled'
+    },
+    {
+      label: 'Delete',
+      icon: '🗑️',
+      variant: 'btn-error',
+      onClick: (booking) => handleDeleteBooking(booking._id)
+    }
+  ];
+
+  const vehicleColumns = [
+    { key: '_id', label: 'ID', width: '15%' },
+    { key: 'vehicleTitle', label: 'Vehicle', width: '20%' },
+    { key: 'guestInfo', label: 'Guest', width: '25%', render: (value) => `${value?.firstName || ''} ${value?.lastName || ''}`.trim() || 'N/A' },
+    { key: 'pickUpDate', label: 'Pick-up', width: '15%', render: (value) => new Date(value).toLocaleDateString() },
+    { key: 'dropOffDate', label: 'Drop-off', width: '15%', render: (value) => new Date(value).toLocaleDateString() },
+    { key: 'totalCost', label: 'Total (LKR)', width: '10%', render: (value) => value?.toLocaleString() || 'N/A' }
+  ];
+
+  const propertyFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'all', label: 'All Properties' },
+        { value: 'pending', label: 'Pending Approval' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' }
+      ]
+    }
+  ];
+
+  const bookingFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'all', label: 'All Bookings' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'confirmed', label: 'Confirmed' },
+        { value: 'checked-in', label: 'Checked In' },
+        { value: 'checked-out', label: 'Checked Out' },
+        { value: 'cancelled', label: 'Cancelled' }
+      ]
+    }
+  ];
 
   return (
-    <div className="admin-dashboard">
-      <h1>Admin Dashboard</h1>
-      
-      <div className="admin-tabs">
-        <button 
-          className={activeTab === 'dashboard' ? 'active' : ''}
-          onClick={() => setActiveTab('dashboard')}
-        >
-          Dashboard
-        </button>
-        <button 
-          className={activeTab === 'properties' ? 'active' : ''}
-          onClick={() => setActiveTab('properties')}
-        >
-          Property Management
-        </button>
-        <button 
-          className={activeTab === 'bookings' ? 'active' : ''}
-          onClick={() => setActiveTab('bookings')}
-        >
-          Booking Management
-        </button>
-        <button 
-          className={activeTab === 'vehicleReservations' ? 'active' : ''}
-          onClick={() => setActiveTab('vehicleReservations')}
-        >
-          Vehicle Reservations
-        </button>
-      </div>
+    <DashboardLayout
+      title="Admin Dashboard"
+      subtitle="Manage properties, bookings, and system operations"
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      headerActions={headerActions}
+    >
+      {activeTab === 'overview' && stats && (
+        <div className="fade-in">
+          <StatsDashboard stats={stats} bookingStats={bookingStats} />
 
-      {activeTab === 'dashboard' && stats && (
-        <StatsDashboard stats={stats} bookingStats={bookingStats} />
+          {/* Quick Stats Overview */}
+          <div className="dashboard-card">
+            <div className="card-header">
+              <h3 className="card-title">Quick Overview</h3>
+            </div>
+            <div className="card-content">
+              <div className="stats-grid">
+                <StatCard
+                  title="Total Properties"
+                  value={stats.total}
+                  icon="🏨"
+                  variant="primary"
+                />
+                <StatCard
+                  title="Pending Approvals"
+                  value={stats.pending}
+                  icon="⏳"
+                  variant="warning"
+                />
+                <StatCard
+                  title="Active Properties"
+                  value={stats.approved}
+                  icon="✅"
+                  variant="success"
+                />
+                <StatCard
+                  title="Total Revenue"
+                  value={bookingStats?.totalRevenue || 0}
+                  icon="💰"
+                  variant="info"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeTab === 'properties' && (
-        <div className="property-management">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-            <button className="btn btn-primary" onClick={() => window.location.href = '/admin/add-vehicle'}>Add Vehicle</button>
-          </div>
-          <div className="filter-controls">
-            <label>Filter by status:</label>
-            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value="all">All Properties</option>
-              <option value="pending">Pending Approval</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-
-          <PropertyTable 
-            properties={properties} 
-            onStatusUpdate={handleStatusUpdate}
-            onDeleteProperty={handleDeleteProperty}
-            showActions={true}
+        <div className="fade-in">
+          <DataTable
+            title="Property Management"
+            columns={propertyColumns}
+            data={properties}
+            loading={loading}
+            actions={propertyActions}
+            filters={propertyFilters}
+            emptyMessage="No properties found"
+            emptyIcon="🏨"
           />
         </div>
       )}
 
       {activeTab === 'bookings' && (
-        <div className="booking-management">
-          <div className="filter-controls">
-            <label>Filter by status:</label>
-            <select value={bookingFilter} onChange={(e) => setBookingFilter(e.target.value)}>
-              <option value="all">All Bookings</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="checked-in">Checked In</option>
-              <option value="checked-out">Checked Out</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
-
-          {loading ? (
-            <div className="loading">Loading bookings...</div>
-          ) : (
-            <BookingTable 
-              bookings={bookings}
-              onStatusUpdate={handleBookingStatusUpdate}
-              onDeleteBooking={handleDeleteBooking}
-            />
-          )}
+        <div className="fade-in">
+          <DataTable
+            title="Booking Management"
+            columns={bookingColumns}
+            data={bookings}
+            loading={loading}
+            actions={bookingActions}
+            filters={bookingFilters}
+            emptyMessage="No bookings found"
+            emptyIcon="📅"
+          />
         </div>
       )}
 
-      {activeTab === 'vehicleReservations' && (
-        <div className="vehicle-reservations">
-          <h2>Vehicle Reservations</h2>
-          {vehicleReservations.length === 0 ? (
-            <p>No vehicle reservations yet.</p>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Vehicle</th>
-                  <th>Guest</th>
-                  <th>Pick-up</th>
-                  <th>Drop-off</th>
-                  <th>Days</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vehicleReservations.map(r => (
-                  <tr key={r._id}>
-                    <td>{r._id}</td>
-                    <td>{r.vehicleTitle}</td>
-                    <td>{r.guestInfo.firstName} {r.guestInfo.lastName}<br/>{r.guestInfo.email}</td>
-                    <td>{new Date(r.pickUpDate).toLocaleDateString()}</td>
-                    <td>{new Date(r.dropOffDate).toLocaleDateString()}</td>
-                    <td>{r.totalDays}</td>
-                    <td>{r.totalCost}</td>
-                    <td>{r.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {activeTab === 'vehicles' && (
+        <div className="fade-in">
+          <DataTable
+            title="Vehicle Reservations"
+            columns={vehicleColumns}
+            data={vehicleReservations}
+            loading={false}
+            emptyMessage="No vehicle reservations found"
+            emptyIcon="🚗"
+          />
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 };
 
