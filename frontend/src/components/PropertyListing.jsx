@@ -548,30 +548,30 @@ const HomePage = () => {
           <div className="footer-section">
             <h4>Discover</h4>
             <ul>
-              <li><a href="#">Hotels</a></li>
-              <li><a href="#">Apartments</a></li>
-              <li><a href="#">Vacation Rentals</a></li>
-              <li><a href="#">Experiences</a></li>
+              <li><button>Hotels</button></li>
+              <li><button>Apartments</button></li>
+              <li><button>Vacation Rentals</button></li>
+              <li><button>Experiences</button></li>
             </ul>
           </div>
           
           <div className="footer-section">
             <h4>About</h4>
             <ul>
-              <li><a href="#">About Us</a></li>
-              <li><a href="#">How it works</a></li>
-              <li><a href="#">Careers</a></li>
-              <li><a href="#">Press</a></li>
+              <li><button>About Us</button></li>
+              <li><button>How it works</button></li>
+              <li><button>Careers</button></li>
+              <li><button>Press</button></li>
             </ul>
           </div>
           
           <div className="footer-section">
             <h4>Support</h4>
             <ul>
-              <li><a href="#">Help Center</a></li>
-              <li><a href="#">Contact Us</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="#">Terms of Service</a></li>
+              <li><button>Help Center</button></li>
+              <li><button>Contact Us</button></li>
+              <li><button>Privacy Policy</button></li>
+              <li><button>Terms of Service</button></li>
             </ul>
           </div>
         </div>
