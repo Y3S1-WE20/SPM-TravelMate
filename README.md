@@ -48,18 +48,6 @@ This repository contains the code and documentation for the "TravelMate" project
 
 ---
 
-## 👤 Component 3: Individual Viva
-
-- **Objective:** Assess individual understanding and contributions.
-- **Topics:**
-  - Agile values and principles
-  - Scrum roles, artifacts, ceremonies
-  - Personal contributions during Sprints 0–4
-  - Contributions to industry visit/interviews
-  - Challenges faced and solutions
-  - Tools used for collaboration and tracking
-
----
 
 ## 🧰 Tools & Technologies
 
@@ -111,52 +99,8 @@ FRONTEND_URL=http://localhost:3000
 
 ---
 
-## 🏆 Assessment Rubrics
-
-### **Industry Visit & Interview Report**
-- Depth of interviews & insights
-- Application to project
-- Tools & techniques discussed
-- Presentation & structure
-
-### **Group Presentation**
-- Scrum execution evidence
-- Role rotation & collaboration
-- Tool usage & tracking
-- Quality of final product & presentation
-
-### **Individual Viva**
-- Scrum theory knowledge
-- Practical contributions & reflections
-- Problem-solving & challenges
-- Tools & techniques knowledge
-- Communication skills
-
----
-
-## 📅 Key Dates
-
-- **Assignment Published:** 24th September, 2025
-- **Submission Deadline:** 12th October, 2025
-
----
-
-## ⚠️ Academic Integrity
-
-- Plagiarism will not be tolerated.
-- Late submissions will result in mark deductions.
-
----
-
 ## 📚 References
 
 - [Agile Manifesto](https://agilemanifesto.org/)
 - [Scrum Guide](https://scrumguides.org/)
-- SLIIT Lecture Materials
-
----
-
-> _For any queries, contact your course instructor or refer to the LMS for updates._
-
----
 
