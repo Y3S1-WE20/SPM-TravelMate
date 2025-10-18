@@ -4,10 +4,11 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import PropertyCard from './PropertyCard';
 import PropertyDetailModal from './PropertyDetailModal';
+import ScrollStack, { ScrollStackItem } from './ScrollStack';
 import './PropertyListing.css';
  
 // Import icons (you'll need to install react-icons: npm install react-icons)
-import { FaBed, FaMoneyBillWave, FaStar, FaHeadset, FaUmbrellaBeach, FaMountain, FaCity, FaTree } from 'react-icons/fa';
+import { FaBed, FaMoneyBillWave, FaHeadset, FaUmbrellaBeach, FaMountain, FaCity, FaCamera, FaUtensils, FaRoute } from 'react-icons/fa';
 import { MdCancel, MdApartment, MdHouse } from 'react-icons/md';
 import { IoIosPaper } from 'react-icons/io';
 
@@ -277,6 +278,113 @@ const HomePage = () => {
             <p>Mountain views</p>
           </motion.div>
         </motion.div>
+      </motion.section>
+
+      {/* Scroll Stack Experience Section */}
+      <motion.section
+        className="scroll-stack-section"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        viewport={{ once: true }}
+      >
+        <motion.div
+          className="section-header"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <h2>Experience Sri Lanka Like Never Before</h2>
+          <p>Scroll through our curated travel experiences</p>
+        </motion.div>
+
+        <ScrollStack
+          itemDistance={120}
+          itemScale={0.05}
+          itemStackDistance={40}
+          stackPosition="25%"
+          scaleEndPosition="15%"
+          baseScale={0.8}
+          rotationAmount={2}
+          blurAmount={1}
+          useWindowScroll={true}
+        >
+          <ScrollStackItem>
+            <div className="stack-card-content">
+              <div className="stack-card-header">
+                <FaUmbrellaBeach className="stack-icon" />
+                <h3>Beach Paradise</h3>
+              </div>
+              <p>Discover pristine beaches and coastal wonders. From the historic Galle Fort to the golden sands of Mirissa, experience the perfect blend of relaxation and adventure.</p>
+              <div className="stack-card-features">
+                <span>🏖️ White Sand Beaches</span>
+                <span>🏄 Surfing Spots</span>
+                <span>🍹 Beachfront Resorts</span>
+              </div>
+            </div>
+          </ScrollStackItem>
+
+          <ScrollStackItem>
+            <div className="stack-card-content">
+              <div className="stack-card-header">
+                <FaMountain className="stack-icon" />
+                <h3>Mountain Serenity</h3>
+              </div>
+              <p>Escape to the misty hills of Ella and Nuwara Eliya. Trek through tea plantations, visit ancient temples, and witness breathtaking sunrise views from Adam's Peak.</p>
+              <div className="stack-card-features">
+                <span>🏔️ Scenic Hiking Trails</span>
+                <span>☕ Tea Plantations</span>
+                <span>🌅 Sunrise Viewpoints</span>
+              </div>
+            </div>
+          </ScrollStackItem>
+
+          <ScrollStackItem>
+            <div className="stack-card-content">
+              <div className="stack-card-header">
+                <FaCamera className="stack-icon" />
+                <h3>Cultural Heritage</h3>
+              </div>
+              <p>Immerse yourself in ancient traditions and UNESCO World Heritage sites. Visit the Temple of the Tooth, explore Sigiriya Rock Fortress, and witness traditional dance performances.</p>
+              <div className="stack-card-features">
+                <span>🏛️ Ancient Temples</span>
+                <span>🎭 Cultural Shows</span>
+                <span>📸 Historic Sites</span>
+              </div>
+            </div>
+          </ScrollStackItem>
+
+          <ScrollStackItem>
+            <div className="stack-card-content">
+              <div className="stack-card-header">
+                <FaUtensils className="stack-icon" />
+                <h3>Culinary Journey</h3>
+              </div>
+              <p>Savor authentic Sri Lankan flavors and spices. From spicy curries to fresh seafood, experience the rich culinary heritage that has been perfected over centuries.</p>
+              <div className="stack-card-features">
+                <span>🍛 Traditional Curries</span>
+                <span>🫖 Ceylon Tea</span>
+                <span>🥥 Tropical Fruits</span>
+              </div>
+            </div>
+          </ScrollStackItem>
+
+          <ScrollStackItem>
+            <div className="stack-card-content">
+              <div className="stack-card-header">
+                <FaRoute className="stack-icon" />
+                <h3>Adventure Awaits</h3>
+              </div>
+              <p>Thrill-seekers unite! From whale watching to river safaris, Sri Lanka offers endless adventures. Explore national parks, go on safari, or dive into coral reefs.</p>
+              <div className="stack-card-features">
+                <span>🐋 Whale Watching</span>
+                <span>🦌 Wildlife Safaris</span>
+                <span>🤿 Scuba Diving</span>
+              </div>
+            </div>
+          </ScrollStackItem>
+        </ScrollStack>
       </motion.section>
 
       {/* Property Listing */}
