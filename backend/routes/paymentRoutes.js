@@ -2,6 +2,7 @@ import express from "express";
 import {
   createPayPalOrder,
   capturePayPalPayment,
+  completePayment,
   getPayment,
   getUserPayments,
   getOwnerPayments
@@ -14,6 +15,9 @@ router.post("/create-order", createPayPalOrder);
 
 // Capture PayPal payment
 router.post("/capture/:orderId", capturePayPalPayment);
+
+// Frontend notifies backend of completed payment
+router.post('/complete', completePayment);
 
 // Get payment details
 router.get("/:paymentId", getPayment);

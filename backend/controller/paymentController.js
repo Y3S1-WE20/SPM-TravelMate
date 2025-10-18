@@ -5,16 +5,28 @@ import User from "../models/User.js";
 import mongoose from "mongoose";
 
 // PayPal SDK setup
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
-const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'production' 
-  ? 'https://api-m.paypal.com' 
-  : 'https://api-m.sandbox.paypal.com';
+// NOTE: read PayPal credentials at runtime inside functions to avoid issues when modules
+// are imported before env is fully injected in some environments. This keeps values
+// fresh and avoids stale undefined values captured at import time.
 
 // Generate PayPal access token
 const generateAccessToken = async () => {
   try {
-    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
+  // Trim credentials to avoid whitespace issues
+  const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
+    // Debug: log presence of credentials (don't log secrets)
+    console.log('DEBUG PayPal env: clientId present=', !!clientId, 'clientId(first10)=', clientId ? clientId.substring(0,10) : null, 'secret present=', !!clientSecret);
+    
+    if (!clientId || !clientSecret) {
+      throw new Error('PayPal credentials are not configured properly');
+    }
+    
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'production'
+      ? 'https://api-m.paypal.com'
+      : 'https://api-m.sandbox.paypal.com';
+
     const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
       method: 'POST',
       headers: {
@@ -25,9 +37,26 @@ const generateAccessToken = async () => {
     });
     
     const data = await response.json();
+    
+    // Check if response was successful
+    if (!response.ok) {
+      console.error('PayPal token generation failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: data
+      });
+      throw new Error(`PayPal API error: ${data.error || response.statusText} - ${data.error_description || ''}`);
+    }
+    
+    // Validate access token exists
+    if (!data.access_token) {
+      console.error('No access token in PayPal response:', data);
+      throw new Error('PayPal did not return an access token');
+    }
+    
     return data.access_token;
   } catch (error) {
-    console.error('Error generating PayPal access token:', error);
+    console.error('Error generating PayPal access token:', error.message);
     throw error;
   }
 };
@@ -55,7 +84,8 @@ export const createPayPalOrder = async (req, res) => {
       });
     }
     
-    const accessToken = await generateAccessToken();
+  const accessToken = await generateAccessToken();
+  console.log('✅ PayPal access token generated successfully');
     
     // Convert LKR to USD (approximate rate: 1 USD = 300 LKR)
     const LKR_TO_USD_RATE = 300;
@@ -81,7 +111,11 @@ export const createPayPalOrder = async (req, res) => {
       }
     };
     
-    const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+    const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'production' 
+      ? 'https://api-m.paypal.com' 
+      : 'https://api-m.sandbox.paypal.com';
+
+    let response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,14 +124,56 @@ export const createPayPalOrder = async (req, res) => {
       body: JSON.stringify(orderData)
     });
     
-    const order = await response.json();
+    let order = await response.json();
+    
+    // Log response for debugging
+    if (!response.ok) {
+      console.error('PayPal order creation failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: order
+      });
+    } else {
+      console.log('✅ PayPal order created:', order.id);
+    }
+
+    // Handle transient invalid_token errors by regenerating token and retrying once
+    if ((order && order.error === 'invalid_token') || response.status === 401) {
+      console.warn('PayPal returned invalid_token. Regenerating access token and retrying...');
+      try {
+        const newAccessToken = await generateAccessToken();
+        console.log('✅ New access token generated for retry');
+        response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${newAccessToken}`
+          },
+          body: JSON.stringify(orderData)
+        });
+        order = await response.json();
+        
+        if (!response.ok) {
+          console.error('PayPal order creation retry failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: order
+          });
+        } else {
+          console.log('✅ PayPal order created on retry:', order.id);
+        }
+      } catch (retryErr) {
+        console.error('Retry creating PayPal order failed:', retryErr);
+      }
+    }
     
     if (order.id) {
       // Create payment record
       const payment = new Payment({
         bookingId: booking._id,
         userId: booking.userId,
-        propertyOwnerId: property.owner,
+        // Use ownerId from Property (field is `ownerId`) - fallback to booking.userId if missing
+        propertyOwnerId: property.ownerId || booking.userId,
         propertyId: property._id,
         amount: amount,
         currency: 'USD',
@@ -108,12 +184,18 @@ export const createPayPalOrder = async (req, res) => {
       });
       
       await payment.save();
-      
+      // Find approval link (hosted PayPal checkout)
+      const approveLink = Array.isArray(order.links)
+        ? (order.links.find(l => l.rel === 'approve') || order.links.find(l => l.rel === 'approve_url') || null)
+        : null;
+
       res.json({
         success: true,
         data: {
           orderId: order.id,
-          paymentId: payment._id
+          paymentId: payment._id,
+          approveUrl: approveLink?.href || null,
+          rawOrder: order
         }
       });
     } else {
@@ -152,7 +234,8 @@ export const capturePayPalPayment = async (req, res) => {
     }
     
     const accessToken = await generateAccessToken();
-    
+    const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+
     const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
       method: 'POST',
       headers: {
@@ -238,6 +321,120 @@ export const capturePayPalPayment = async (req, res) => {
       message: 'Error processing payment',
       error: error.message
     });
+  }
+};
+
+// Complete payment (frontend-side approval payload)
+export const completePayment = async (req, res) => {
+  try {
+    const body = req.body || {};
+
+    // Defensive read of fields
+    const apptObj = body.appointmentId || body.bookingId || body.apptId;
+    const orderId = body.paypalOrderId || body.orderId || body.paypal_order_id;
+    const amount = body.amount;
+    const userId = body.userId || body.user || null;
+
+    console.log('[COMPLETE] Received payment completion payload:', {
+      appointmentId: apptObj,
+      paypalOrderId: orderId,
+      amount,
+      userId
+    });
+
+    if (!apptObj) {
+      return res.status(400).json({ success: false, message: 'appointmentId missing in request payload' });
+    }
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'paypalOrderId missing in request payload' });
+    }
+    if (amount == null) {
+      return res.status(400).json({ success: false, message: 'amount missing in request payload' });
+    }
+
+    // Parse appointment/booking id
+    let bookingId;
+    try { bookingId = apptObj; } catch (e) { bookingId = apptObj; }
+
+    // Prevent duplicate payments by checking paypalOrderId
+    const existing = await Payment.findOne({ paypalOrderId: orderId });
+    if (existing) {
+      console.log('Payment already exists for order ID:', orderId);
+      return res.json({ success: true, message: 'Payment already completed', paymentId: existing._id });
+    }
+
+    // Try to find booking and property info
+    let booking = null;
+    try { booking = await Booking.findById(bookingId); } catch (e) { /* ignore */ }
+
+    let property = null;
+    if (booking && booking.propertyId) {
+      try { property = await Property.findById(booking.propertyId); } catch (e) { /* ignore */ }
+    }
+
+    // Create payment record
+    const payment = new Payment({
+      bookingId: booking?._id || bookingId,
+      userId: booking?.userId || userId || null,
+      propertyOwnerId: property?.owner || null,
+      propertyId: property?._id || (booking ? booking.propertyId : null),
+      amount: amount,
+      currency: 'USD',
+      paypalOrderId: orderId,
+      status: 'completed',
+      guestEmail: booking?.guestInfo?.email || null,
+      guestName: booking ? `${booking.guestInfo?.firstName || ''} ${booking.guestInfo?.lastName || ''}`.trim() : null,
+      paymentDate: new Date(),
+      paymentMethod: 'PayPal'
+    });
+
+    let savedPayment;
+    try {
+      savedPayment = await payment.save();
+      console.log('✅ Payment saved with id:', savedPayment._id);
+    } catch (dbErr) {
+      console.error('Error saving payment:', dbErr);
+      return res.status(500).json({ success: false, message: 'Failed to save payment', error: dbErr.message });
+    }
+
+    // Update booking status if applicable
+    if (booking) {
+      try {
+        booking.status = 'confirmed';
+        await booking.save();
+        console.log('Booking status updated to confirmed for', booking._id);
+      } catch (e) {
+        console.warn('Could not update booking status:', e.message);
+      }
+    }
+
+    // Update user payment history
+    if (savedPayment.userId) {
+      try {
+        await User.findByIdAndUpdate(savedPayment.userId, {
+          $push: { paymentHistory: { paymentId: savedPayment._id, amount: savedPayment.amount, date: savedPayment.paymentDate, bookingId: savedPayment.bookingId, status: 'completed' } }
+        });
+      } catch (e) {
+        console.warn('Could not update user payment history:', e.message);
+      }
+    }
+
+    // Update owner receivedPayments and totals
+    if (savedPayment.propertyOwnerId) {
+      try {
+        await User.findByIdAndUpdate(savedPayment.propertyOwnerId, {
+          $push: { receivedPayments: { paymentId: savedPayment._id, amount: savedPayment.ownerPayout || savedPayment.amount, date: savedPayment.paymentDate, bookingId: savedPayment.bookingId, propertyId: savedPayment.propertyId, status: 'completed' } },
+          $inc: { totalEarnings: savedPayment.ownerPayout || 0 }
+        });
+      } catch (e) {
+        console.warn('Could not update owner payments:', e.message);
+      }
+    }
+
+    return res.json({ success: true, message: 'Payment completed successfully', paymentId: savedPayment._id, appointmentId: bookingId, transactionId: orderId });
+  } catch (error) {
+    console.error('completePayment error:', error);
+    return res.status(500).json({ success: false, message: 'Payment completion failed', error: error.message });
   }
 };
 
