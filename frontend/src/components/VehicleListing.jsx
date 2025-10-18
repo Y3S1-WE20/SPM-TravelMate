@@ -10,6 +10,12 @@ const VehicleListing = () => {
   const [expandedId, setExpandedId] = useState(null);
   const navigate = useNavigate();
 
+  const formatPrice = (price) => {
+    // Convert to LKR (assuming the price is in USD)
+    const lkrPrice = price * 1; // Using approximate conversion rate
+    return `Rs. ${lkrPrice.toLocaleString()}`;
+  };
+
   useEffect(() => {
     fetchVehicles();
   }, []);
@@ -105,7 +111,7 @@ const VehicleListing = () => {
               <div className="vehicle-header">
                 <h3>{v.title}</h3>
                 <div className="vehicle-price">
-                  <strong>${v.pricePerDay}</strong>
+                  <strong>{formatPrice(v.pricePerDay)}</strong>
                   <span>/day</span>
                 </div>
               </div>
