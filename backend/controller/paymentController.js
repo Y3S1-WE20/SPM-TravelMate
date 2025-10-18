@@ -359,8 +359,76 @@ export const completePayment = async (req, res) => {
     // Prevent duplicate payments by checking paypalOrderId
     const existing = await Payment.findOne({ paypalOrderId: orderId });
     if (existing) {
-      console.log('Payment already exists for order ID:', orderId);
-      return res.json({ success: true, message: 'Payment already completed', paymentId: existing._id });
+      console.log('Payment already exists for order ID:', orderId, 'status=', existing.status);
+      // If it's already completed, return success
+      if (existing.status === 'completed') {
+        return res.json({ success: true, message: 'Payment already completed', paymentId: existing._id });
+      }
+
+      // If the payment exists but is not completed, try to capture the PayPal order now
+      try {
+        console.log('Attempting to capture PayPal order for existing payment:', orderId);
+        const accessToken = await generateAccessToken();
+        const PAYPAL_API_BASE = process.env.PAYPAL_MODE === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+        const capRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        const capData = await capRes.json();
+        console.log('PayPal capture response:', capRes.status, capData?.status || capData);
+
+        if (capData.status === 'COMPLETED') {
+          // Update existing payment record
+          existing.status = 'completed';
+          existing.paymentDate = new Date();
+          existing.paypalPayerId = capData.payer?.payer_id;
+          existing.paypalPaymentId = capData.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+          existing.paypalResponse = capData;
+          await existing.save();
+
+          // Update booking
+          try {
+            const bookingToUpdate = await Booking.findById(existing.bookingId);
+            if (bookingToUpdate) {
+              bookingToUpdate.status = 'confirmed';
+              await bookingToUpdate.save();
+            }
+          } catch (e) {
+            console.warn('Could not update booking status after capture:', e.message);
+          }
+
+          // Update user and owner histories
+          try {
+            if (existing.userId) {
+              await User.findByIdAndUpdate(existing.userId, {
+                $push: { paymentHistory: { paymentId: existing._id, amount: existing.amount, date: existing.paymentDate, bookingId: existing.bookingId, status: 'completed' } }
+              });
+            }
+            if (existing.propertyOwnerId) {
+              await User.findByIdAndUpdate(existing.propertyOwnerId, {
+                $push: { receivedPayments: { paymentId: existing._id, amount: existing.ownerPayout || existing.amount, date: existing.paymentDate, bookingId: existing.bookingId, propertyId: existing.propertyId, status: 'completed' } },
+                $inc: { totalEarnings: existing.ownerPayout || 0 }
+              });
+            }
+          } catch (e) {
+            console.warn('Could not update user/owner payment histories after capture:', e.message);
+          }
+
+          return res.json({ success: true, message: 'Payment captured and recorded', paymentId: existing._id, captureDetails: capData });
+        }
+
+        // If capture didn't complete, return the capture data for debugging
+        existing.paypalResponse = capData;
+        existing.status = 'failed';
+        await existing.save();
+        return res.status(400).json({ success: false, message: 'PayPal capture did not complete', data: capData });
+      } catch (captureErr) {
+        console.error('Error capturing existing PayPal order:', captureErr);
+        return res.status(500).json({ success: false, message: 'Error capturing PayPal order for existing payment', error: captureErr.message });
+      }
     }
 
     // Try to find booking and property info
