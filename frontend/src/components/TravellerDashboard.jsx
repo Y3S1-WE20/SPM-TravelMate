@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -19,21 +19,7 @@ const TravellerDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [bookingFilter, _setBookingFilter] = useState('all');
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchUserBookings();
-    fetchUserFavorites();
-  }, [user, navigate, bookingFilter]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const fetchUserBookings = async () => {
+  const fetchUserBookings = useCallback(async () => {
     const userId = user._id || user.id;
     if (!userId) return;
 
@@ -55,9 +41,9 @@ const TravellerDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, bookingFilter, user]);
 
-  const fetchUserFavorites = async () => {
+  const fetchUserFavorites = useCallback(async () => {
     const userId = user._id || user.id;
     if (!userId) return;
 
@@ -71,7 +57,23 @@ const TravellerDashboard = () => {
     } finally {
       setFavoritesLoading(false);
     }
+  }, [api, user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchUserBookings();
+    fetchUserFavorites();
+  }, [user, navigate, fetchUserBookings, fetchUserFavorites]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
+
+  
 
   const removeFromFavorites = async (propertyId) => {
     const userId = user._id || user.id;
@@ -86,8 +88,9 @@ const TravellerDashboard = () => {
     }
   };
 
-  const _getStatusColor = (status) => {
-  switch (status) {
+  // helper to map booking status to a color (used in UI if needed)
+  const getStatusColor = (status) => {
+    switch (status) {
       case 'pending': return '#ffc107';
       case 'confirmed': return '#28a745';
       case 'checked-in': return '#17a2b8';
