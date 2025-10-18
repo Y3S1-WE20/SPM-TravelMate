@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
 
@@ -40,21 +41,60 @@ function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-form-wrapper">
-        <div className="login-header">
+    <motion.div 
+      className="login-container"
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div 
+        className="login-form-wrapper"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <motion.div 
+          className="login-header"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
           <h1>Sign in to TravelMate</h1>
           <p>Welcome back! Please enter your details</p>
-        </div>
+        </motion.div>
         
         {error && (
-          <div className="error-message">
+          <motion.div 
+            className="error-message"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
+        <motion.form 
+          onSubmit={handleSubmit} 
+          className="login-form"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
+          <motion.div 
+            className="form-group"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
             <label htmlFor="email">Email address</label>
             <input
               type="email"
@@ -66,9 +106,15 @@ function Login() {
               disabled={isLoading}
               required
             />
-          </div>
+          </motion.div>
 
-          <div className="form-group">
+          <motion.div 
+            className="form-group"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
             <label htmlFor="password">Password</label>
             <input
               type="password"
@@ -80,33 +126,48 @@ function Login() {
               disabled={isLoading}
               required
             />
-          </div>
+          </motion.div>
 
-          <button
+          <motion.button
             type="submit"
             disabled={isLoading}
             className="login-button"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
+          </motion.button>
+        </motion.form>
 
-        <div className="login-footer">
+        <motion.div 
+          className="login-footer"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+        >
           <div className="divider">
             <span>Don't have an account?</span>
           </div>
           <div className="auth-links">
-            <Link to="/register" className="auth-link">
-              Create account
-            </Link>
+            <motion.div whileHover={{ scale: 1.05 }}>
+              <Link to="/register" className="auth-link">
+                Create account
+              </Link>
+            </motion.div>
             <span className="separator">|</span>
-            <Link to="/admin-login" className="auth-link">
-              Admin Login
-            </Link>
+            <motion.div whileHover={{ scale: 1.05 }}>
+              <Link to="/admin-login" className="auth-link">
+                Admin Login
+              </Link>
+            </motion.div>
           </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 

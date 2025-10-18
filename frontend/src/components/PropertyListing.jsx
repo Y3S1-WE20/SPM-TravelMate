@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 import PropertyCard from './PropertyCard';
 import PropertyDetailModal from './PropertyDetailModal';
 import './PropertyListing.css';
@@ -22,16 +23,11 @@ const HomePage = () => {
     minPrice: '',
     maxPrice: ''
   });
-  const [heroSearch, setHeroSearch] = useState({
-    location: '',
-    propertyType: '',
-    checkInDate: ''
-  });
   const [email, setEmail] = useState('');
 
   useEffect(() => {
     fetchProperties();
-  }, [filters, heroSearch.checkInDate]);
+  }, [filters]);
 
   const fetchProperties = async () => {
     try {
@@ -45,11 +41,6 @@ const HomePage = () => {
       
       const response = await axios.get(`http://localhost:5001/api/properties/public?${params}`);
       let filteredProperties = response.data.data;
-      
-      // Apply date filtering if hero search has a check-in date
-      if (heroSearch.checkInDate) {
-        filteredProperties = filterPropertiesByDate(filteredProperties, heroSearch.checkInDate);
-      }
       
       setProperties(filteredProperties);
     } catch (error) {
@@ -83,44 +74,6 @@ const HomePage = () => {
     });
   };
 
-  const handleHeroSearchChange = (e) => {
-    const { name, value } = e.target;
-    setHeroSearch(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleHeroSearch = () => {
-    // Update main filters with hero search values
-    setFilters(prev => ({
-      ...prev,
-      city: heroSearch.location,
-      propertyType: heroSearch.propertyType
-    }));
-    
-    // Scroll to properties section
-    document.querySelector('.property-listing-section')?.scrollIntoView({ 
-      behavior: 'smooth' 
-    });
-  };
-
-  const filterPropertiesByDate = (properties, checkInDate) => {
-    if (!checkInDate) return properties;
-    
-    const selectedDate = new Date(checkInDate);
-    return properties.filter(property => {
-      if (!property.availability || property.availability.length === 0) {
-        return false;
-      }
-      
-      return property.availability.some(avail => {
-        const availDate = new Date(avail.date);
-        return avail.available && availDate >= selectedDate;
-      });
-    });
-  };
-
   const handleCardClick = (property) => {
     setSelectedProperty(property);
     setIsModalOpen(true);
@@ -145,92 +98,95 @@ const HomePage = () => {
   return (
     <div className="home-page">
       {/* Hero Section */}
-      <section className="hero-section">
+      <motion.section 
+        className="hero-section"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
         <div className="hero-content">
-          <h1>Discover Your Perfect Travel Experience</h1>
-          <p>Find amazing accommodations, vehicles, and tour packages for your next adventure</p>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            Discover Your Perfect Travel Experience
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            Find amazing accommodations, vehicles, and tour packages for your next adventure
+          </motion.p>
           
           {/* Call to Action Buttons */}
-          <div className="hero-cta-buttons">
-            <button 
+          <motion.div 
+            className="hero-cta-buttons"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <motion.button 
               className="cta-btn primary" 
               onClick={() => navigate('/register')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Join TravelMate Today
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
               className="cta-btn secondary" 
               onClick={() => navigate('/login')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Already a Member? Sign In
-            </button>
-          </div>
-          
-          {/* Modern Finder Box */}
-          <div className="hero-search-widget">
-            <h3>Find Your Perfect Stay</h3>
-            <div className="search-form">
-              <div className="search-field">
-                <label><FaCity className="field-icon" /> Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={heroSearch.location}
-                  onChange={handleHeroSearchChange}
-                  placeholder="Where are you going?"
-                  className="hero-input"
-                />
-              </div>
-              
-              <div className="search-field">
-                <label><MdHouse className="field-icon" /> Property Type</label>
-                <select
-                  name="propertyType"
-                  value={heroSearch.propertyType}
-                  onChange={handleHeroSearchChange}
-                  className="hero-select"
-                >
-                  <option value="">All Types</option>
-                  <option value="Apartment">🏠 Apartment</option>
-                  <option value="Villa">🏘️ Villa</option>
-                  <option value="Lodge">🏡 Lodge</option>
-                  <option value="Room">🚪 Room</option>
-                  <option value="Cottage">🏕️ Cottage</option>
-                  <option value="House">🏠 House</option>
-                  <option value="Bungalow">🏖️ Bungalow</option>
-                  <option value="Studio">🏢 Studio</option>
-                </select>
-              </div>
-              
-              <div className="search-field">
-                <label><FaBed className="field-icon" /> Check-in Date</label>
-                <input
-                  type="date"
-                  name="checkInDate"
-                  value={heroSearch.checkInDate}
-                  onChange={handleHeroSearchChange}
-                  className="hero-input"
-                  min={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-              
-              <button 
-                className="hero-search-btn"
-                onClick={handleHeroSearch}
-              >
-                <FaStar className="search-icon" />
-                Find Properties
-              </button>
-            </div>
-          </div>
+            </motion.button>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Popular Destinations */}
-      <section className="popular-destinations">
-        <h2>Popular Destinations in Sri Lanka</h2>
-          <div className="destinations-grid">
-          <div className="destination-card" onClick={() => handleCityFilter('Colombo')}>
+      <motion.section 
+        className="popular-destinations"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          Popular Destinations in Sri Lanka
+        </motion.h2>
+          <motion.div 
+            className="destinations-grid"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.2
+                }
+              }
+            }}
+          >
+          <motion.div 
+            className="destination-card" 
+            onClick={() => handleCityFilter('Colombo')}
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div
               className="destination-image"
               style={{
@@ -244,9 +200,18 @@ const HomePage = () => {
             />
             <h3>Colombo</h3>
             <p>Urban experiences</p>
-          </div>
+          </motion.div>
           
-          <div className="destination-card" onClick={() => handleCityFilter('Kandy')}>
+          <motion.div 
+            className="destination-card" 
+            onClick={() => handleCityFilter('Kandy')}
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div
               className="destination-image"
               style={{
@@ -260,9 +225,18 @@ const HomePage = () => {
             />
             <h3>Kandy</h3>
             <p>Cultural heart</p>
-          </div>
+          </motion.div>
           
-          <div className="destination-card" onClick={() => handleCityFilter('Galle')}>
+          <motion.div 
+            className="destination-card" 
+            onClick={() => handleCityFilter('Galle')}
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div
               className="destination-image"
               style={{
@@ -276,9 +250,18 @@ const HomePage = () => {
             />
             <h3>Galle</h3>
             <p>Historic charm</p>
-          </div>
+          </motion.div>
           
-          <div className="destination-card" onClick={() => handleCityFilter('Ella')}>
+          <motion.div 
+            className="destination-card" 
+            onClick={() => handleCityFilter('Ella')}
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div
               className="destination-image"
               style={{
@@ -292,18 +275,36 @@ const HomePage = () => {
             />
             <h3>Ella</h3>
             <p>Mountain views</p>
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </motion.div>
+      </motion.section>
 
       {/* Property Listing */}
-      <section className="property-listing-section">
-        <div className="section-header">
+      <motion.section 
+        className="property-listing-section"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <motion.div 
+          className="section-header"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
           <h2>Featured Properties</h2>
           <p>Discover your perfect stay in Sri Lanka</p>
-        </div>
+        </motion.div>
         
-        <div className="filters-section">
+        <motion.div 
+          className="filters-section"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          viewport={{ once: true }}
+        >
           <div className="filter-header">
             <h3><FaBed className="filter-icon" /> Filter Properties</h3>
             <p>Find your perfect accommodation</p>
@@ -376,63 +377,147 @@ const HomePage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="properties-grid">
+        <motion.div 
+          className="properties-grid"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+        >
           {properties.length > 0 ? (
             properties.map(property => (
-              <PropertyCard 
-                key={property._id} 
-                property={property} 
-                onCardClick={handleCardClick}
-              />
+              <motion.div
+                key={property._id}
+                variants={{
+                  hidden: { opacity: 0, y: 50 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+              >
+                <PropertyCard 
+                  property={property} 
+                  onCardClick={handleCardClick}
+                />
+              </motion.div>
             ))
           ) : (
-            <div className="no-properties">
+            <motion.div 
+              className="no-properties"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
               <h3>No properties found</h3>
               <p>Try adjusting your filters or check back later for new listings.</p>
-            </div>
+            </motion.div>
           )}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
       {/* Features Section */}
-      <section className="features-section">
-        <h2>Why TravelMate?</h2>
-        <div className="features-grid">
-          <div className="feature-card">
+      <motion.section 
+        className="features-section"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          Why TravelMate?
+        </motion.h2>
+        <motion.div 
+          className="features-grid"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.2
+              }
+            }
+          }}
+        >
+          <motion.div 
+            className="feature-card"
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="feature-icon">
               <MdCancel />
             </div>
             <h3>FREE cancellation on most rooms</h3>
             <p>Book now, pay at the property with flexible cancellation options</p>
-          </div>
+          </motion.div>
           
-          <div className="feature-card">
+          <motion.div 
+            className="feature-card"
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="feature-icon">
               <IoIosPaper />
             </div>
             <h3>30k+ reviews from fellow travellers</h3>
             <p>Get trusted information from guests like you</p>
-          </div>
+          </motion.div>
           
-          <div className="feature-card">
+          <motion.div 
+            className="feature-card"
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="feature-icon">
               <MdApartment />
             </div>
             <h3>More properties in Sri Lanka</h3>
             <p>Hotels, guest houses, apartments, and more…</p>
-          </div>
+          </motion.div>
           
-          <div className="feature-card">
+          <motion.div 
+            className="feature-card"
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="feature-icon">
               <FaHeadset />
             </div>
             <h3>Trusted customer service</h3>
             <p>We're always here to help, 24/7</p>
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </motion.div>
+      </motion.section>
 
       {/* Newsletter Section */}
       <section className="newsletter-section">

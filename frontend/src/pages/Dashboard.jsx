@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AddPropertyForm from '../components/AddPropertyForm';
@@ -119,11 +120,16 @@ function Dashboard() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#f5f5f5',
-      padding: '20px'
-    }}>
+    <motion.div 
+      style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f5f5f5',
+        padding: '20px'
+      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
       {/* Header */}
       <div style={{
         backgroundColor: 'white',
@@ -761,7 +767,7 @@ function Dashboard() {
       {activeTab === 'booking-management' && user.role === 'hotel owner' && (
         <BookingManagement userId={user._id || user.id} api={api} />
       )}
-    </div>
+    </motion.div>
   );
 }
 

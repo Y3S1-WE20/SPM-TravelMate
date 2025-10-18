@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import './PropertyCard.css';
 
 // Feature icons mapping
@@ -71,7 +72,15 @@ const PropertyCard = ({ property, onCardClick }) => {
   const discountedPrice = calculateDiscountedPrice();
 
   return (
-    <div className="property-card" onClick={handleCardClick}>
+    <motion.div 
+      className="property-card" 
+      onClick={handleCardClick}
+      whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+    >
       {/* Image Carousel */}
       <div className="property-image-container">
         {property.images && property.images.length > 0 ? (
@@ -164,16 +173,21 @@ const PropertyCard = ({ property, onCardClick }) => {
           </div>
 
           {/* Book Now Button */}
-          <Link 
-            to={`/booking/${property._id}`} 
-            className="book-now-btn"
-            onClick={(e) => e.stopPropagation()}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            Book Now
-          </Link>
+            <Link 
+              to={`/booking/${property._id}`} 
+              className="book-now-btn"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Book Now
+            </Link>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

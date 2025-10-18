@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaHome, FaBed, FaCar, FaRoute, FaUserCircle, FaBars, FaTimes, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaHome, FaBed, FaCar, FaRoute, FaUserCircle, FaBars, FaTimes, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import './Header.css';
 import logo from '../assets/logo1.png';
@@ -49,124 +50,231 @@ const Header = () => {
   };
 
   return (
-    <header className="modern-header">
+    <motion.header 
+      className="modern-header"
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
       <div className="header-container">
         {/* Logo */}
-        <div className="logo">
+        <motion.div 
+          className="logo"
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.2 }}
+        >
           <img src={logo} alt="logo" className="h-6 w-6 object-contain mr-2" />
           <span className="logo-text">TravelMate</span>
-        </div>
+        </motion.div>
 
         {/* Desktop Navigation */}
         <nav className="desktop-nav">
-          <Link 
-            to="/" 
-            className={`nav-item ${isActive('/') ? 'active' : ''}`}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            whileHover={{ scale: 1.05 }}
           >
-            <FaHome className="nav-icon" />
-            <span>Home</span>
-          </Link>
+            <Link 
+              to="/" 
+              className={`nav-item ${isActive('/') ? 'active' : ''}`}
+            >
+              <FaHome className="nav-icon" />
+              <span>Home</span>
+            </Link>
+          </motion.div>
           
-          <Link 
-            to="/" 
-            className={`nav-item ${isActive('/') ? 'active' : ''}`}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <FaBed className="nav-icon" />
-            <span>Accommodations</span>
-          </Link>
+            <Link 
+              to="/" 
+              className={`nav-item ${isActive('/') ? 'active' : ''}`}
+            >
+              <FaBed className="nav-icon" />
+              <span>Accommodations</span>
+            </Link>
+          </motion.div>
           
-          <Link 
-            to="/add-property" 
-            className={`nav-item ${isActive('/add-property') ? 'active' : ''}`}
-            style={{ display: isAuthenticated && user?.role === 'hotel owner' ? 'flex' : 'none' }}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            style={{ display: isAuthenticated && user?.role === 'hotel owner' ? 'block' : 'none' }}
           >
-            <FaCar className="nav-icon" />
-            <span>List Property</span>
-          </Link>
+            <Link 
+              to="/add-property" 
+              className={`nav-item ${isActive('/add-property') ? 'active' : ''}`}
+            >
+              <FaCar className="nav-icon" />
+              <span>List Property</span>
+            </Link>
+          </motion.div>
           
-          <Link 
-            to="/vehicles" 
-            className={`nav-item ${isActive('/vehicles') ? 'active' : ''}`}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <FaCar className="nav-icon" />
-            <span>Vehicles</span>
-          </Link>
+            <Link 
+              to="/vehicles" 
+              className={`nav-item ${isActive('/vehicles') ? 'active' : ''}`}
+            >
+              <FaCar className="nav-icon" />
+              <span>Vehicles</span>
+            </Link>
+          </motion.div>
           
-          <Link 
-            to="/tours" 
-            className={`nav-item ${isActive('/tours') ? 'active' : ''}`}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <FaRoute className="nav-icon" />
-            <span>Tours</span>
-          </Link>
+            <Link 
+              to="/tours" 
+              className={`nav-item ${isActive('/tours') ? 'active' : ''}`}
+            >
+              <FaRoute className="nav-icon" />
+              <span>Tours</span>
+            </Link>
+          </motion.div>
           
           {isAuthenticated && user?.role === 'admin' && (
-            <Link 
-              to="/admin" 
-              className={`nav-item ${isActive('/admin') ? 'active' : ''}`}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <FaUserCircle className="nav-icon" />
-              <span>Admin</span>
-            </Link>
+              <Link 
+                to="/admin" 
+                className={`nav-item ${isActive('/admin') ? 'active' : ''}`}
+              >
+                <FaUserCircle className="nav-icon" />
+                <span>Admin</span>
+              </Link>
+            </motion.div>
           )}
         </nav>
 
         {/* Auth Section */}
-        <div className="auth-section">
+        <motion.div 
+          className="auth-section"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+        >
           {isAuthenticated ? (
             <div className="user-profile">
-              <button className="profile-btn" onClick={toggleProfileDropdown}>
+              <motion.button 
+                className="profile-btn" 
+                onClick={toggleProfileDropdown}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <FaUserCircle className="profile-icon" />
                 <span className="username">{user?.firstName || user?.username}</span>
-              </button>
+              </motion.button>
               
-              {isProfileDropdownOpen && (
-                <div className="profile-dropdown">
-                  <div className="user-info">
-                    <p className="user-name">{user?.firstName} {user?.lastName}</p>
-                    <p className="user-role">{user?.role}</p>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <button className="dropdown-item" onClick={handleDashboard}>
-                    <FaTachometerAlt className="dropdown-icon" />
-                    Dashboard
-                  </button>
-                  {user?.role === 'admin' && (
-                    <button className="dropdown-item" onClick={handleAdminDashboard}>
-                      <FaUserCircle className="dropdown-icon" />
-                      Admin Panel
-                    </button>
-                  )}
-                  <button className="dropdown-item logout" onClick={handleLogout}>
-                    <FaSignOutAlt className="dropdown-icon" />
-                    Logout
-                  </button>
-                </div>
-              )}
+              <AnimatePresence>
+                {isProfileDropdownOpen && (
+                  <motion.div 
+                    className="profile-dropdown"
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="user-info">
+                      <p className="user-name">{user?.firstName} {user?.lastName}</p>
+                      <p className="user-role">{user?.role}</p>
+                    </div>
+                    <div className="dropdown-divider"></div>
+                    <motion.button 
+                      className="dropdown-item" 
+                      onClick={handleDashboard}
+                      whileHover={{ backgroundColor: "rgba(0,0,0,0.05)" }}
+                    >
+                      <FaTachometerAlt className="dropdown-icon" />
+                      Dashboard
+                    </motion.button>
+                    {user?.role === 'admin' && (
+                      <motion.button 
+                        className="dropdown-item" 
+                        onClick={handleAdminDashboard}
+                        whileHover={{ backgroundColor: "rgba(0,0,0,0.05)" }}
+                      >
+                        <FaUserCircle className="dropdown-icon" />
+                        Admin Panel
+                      </motion.button>
+                    )}
+                    <motion.button 
+                      className="dropdown-item logout" 
+                      onClick={handleLogout}
+                      whileHover={{ backgroundColor: "rgba(255,0,0,0.1)" }}
+                    >
+                      <FaSignOutAlt className="dropdown-icon" />
+                      Logout
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="auth-buttons">
-              <button className="sign-in-btn" onClick={handleSignIn}>Sign In</button>
-              <button className="sign-up-btn" onClick={handleSignUp}>Sign Up</button>
-              <button 
+              <motion.button 
+                className="sign-in-btn" 
+                onClick={handleSignIn}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Sign In
+              </motion.button>
+              <motion.button 
+                className="sign-up-btn" 
+                onClick={handleSignUp}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Sign Up
+              </motion.button>
+              <motion.button 
                 className="admin-login-btn"
                 onClick={() => navigate('/admin-login')}
                 title="Admin Portal"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Admin
-              </button>
+              </motion.button>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Mobile Menu Button */}
-        <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
+        <motion.button 
+          className="mobile-menu-btn" 
+          onClick={toggleMobileMenu}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          animate={{ rotate: isMobileMenuOpen ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
           {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
-        </button>
+        </motion.button>
       </div>
 
       {/* Mobile Navigation */}
-      <nav className={`mobile-nav ${isMobileMenuOpen ? 'open' : ''}`}>
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.nav 
+            className="mobile-nav open"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
         <Link 
           to="/" 
           className={`mobile-nav-item ${isActive('/') ? 'active' : ''}`}
@@ -264,8 +372,10 @@ const Header = () => {
             </div>
           )}
         </div>
-      </nav>
-    </header>
+      </motion.nav>
+      )}
+      </AnimatePresence>
+    </motion.header>
   );
 };
 

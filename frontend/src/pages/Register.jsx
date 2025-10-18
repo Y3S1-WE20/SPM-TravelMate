@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
 
@@ -58,30 +59,45 @@ function Register() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      backgroundColor: '#f5f5f5',
-      padding: '20px 0'
-    }}>
-      <div style={{ 
-        maxWidth: '500px', 
-        width: '100%',
-        margin: '20px',
-        padding: '40px', 
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h2 style={{ 
-          textAlign: 'center', 
-          marginBottom: '30px',
-          color: '#333'
-        }}>
+    <motion.div 
+      style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#f5f5f5',
+        padding: '20px 0'
+      }}
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div 
+        style={{ 
+          maxWidth: '500px', 
+          width: '100%',
+          margin: '20px',
+          padding: '40px', 
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+        }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <motion.h2 
+          style={{ 
+            textAlign: 'center', 
+            marginBottom: '30px',
+            color: '#333'
+          }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
           Create your TravelMate account
-        </h2>
+        </motion.h2>
         
         {error && (
           <div style={{ 
@@ -330,8 +346,8 @@ function Register() {
             Sign in
           </Link>
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
