@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
@@ -7,14 +7,12 @@ const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Intentionally omit checkFavoriteStatus from deps — stable for this component
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     checkFavoriteStatus();
-  }, [propertyId, user]);
+  }, [propertyId, user, checkFavoriteStatus]);
 
-  const checkFavoriteStatus = async () => {
+  const checkFavoriteStatus = useCallback(async () => {
     if (!user?._id || !propertyId) return;
-    
+
     try {
       const response = await api.get(`/api/users/${user._id}/favorites`);
       const favorites = response.data.data || [];
@@ -22,9 +20,7 @@ const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
-  };
-
-  const toggleFavorite = async () => {
+  }, [user, propertyId, api]);  const toggleFavorite = async () => {
     if (!user?._id) {
       alert('Please log in to add favorites');
       return;
