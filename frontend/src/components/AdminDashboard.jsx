@@ -14,6 +14,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, pending, approved, rejected
   const [bookingFilter, setBookingFilter] = useState('all'); // all, pending, confirmed, cancelled, completed
+  const [vehicleReservations, setVehicleReservations] = useState([]);
 
   useEffect(() => {
     fetchProperties();
@@ -21,6 +22,9 @@ const AdminDashboard = () => {
     if (activeTab === 'bookings') {
       fetchBookings();
       fetchBookingStats();
+    }
+    if (activeTab === 'vehicleReservations') {
+      fetchVehicleReservations();
     }
   }, [filter, bookingFilter, activeTab]);
 
@@ -65,6 +69,15 @@ const AdminDashboard = () => {
       setBookingStats(response.data.data);
     } catch (error) {
       console.error('Error fetching booking stats:', error);
+    }
+  };
+
+  const fetchVehicleReservations = async () => {
+    try {
+      const res = await axios.get('http://localhost:5001/api/vehicles/reservations/all');
+      if (res.data.success) setVehicleReservations(res.data.reservations);
+    } catch (err) {
+      console.error('Error fetching vehicle reservations', err);
     }
   };
 
@@ -153,6 +166,12 @@ const AdminDashboard = () => {
         >
           Booking Management
         </button>
+        <button 
+          className={activeTab === 'vehicleReservations' ? 'active' : ''}
+          onClick={() => setActiveTab('vehicleReservations')}
+        >
+          Vehicle Reservations
+        </button>
       </div>
 
       {activeTab === 'dashboard' && stats && (
@@ -161,6 +180,9 @@ const AdminDashboard = () => {
 
       {activeTab === 'properties' && (
         <div className="property-management">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <button className="btn btn-primary" onClick={() => window.location.href = '/admin/add-vehicle'}>Add Vehicle</button>
+          </div>
           <div className="filter-controls">
             <label>Filter by status:</label>
             <select value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -202,6 +224,44 @@ const AdminDashboard = () => {
               onStatusUpdate={handleBookingStatusUpdate}
               onDeleteBooking={handleDeleteBooking}
             />
+          )}
+        </div>
+      )}
+
+      {activeTab === 'vehicleReservations' && (
+        <div className="vehicle-reservations">
+          <h2>Vehicle Reservations</h2>
+          {vehicleReservations.length === 0 ? (
+            <p>No vehicle reservations yet.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Vehicle</th>
+                  <th>Guest</th>
+                  <th>Pick-up</th>
+                  <th>Drop-off</th>
+                  <th>Days</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vehicleReservations.map(r => (
+                  <tr key={r._id}>
+                    <td>{r._id}</td>
+                    <td>{r.vehicleTitle}</td>
+                    <td>{r.guestInfo.firstName} {r.guestInfo.lastName}<br/>{r.guestInfo.email}</td>
+                    <td>{new Date(r.pickUpDate).toLocaleDateString()}</td>
+                    <td>{new Date(r.dropOffDate).toLocaleDateString()}</td>
+                    <td>{r.totalDays}</td>
+                    <td>{r.totalCost}</td>
+                    <td>{r.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       )}
