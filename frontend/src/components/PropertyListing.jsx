@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
@@ -25,13 +25,7 @@ const HomePage = () => {
   });
   const [email, setEmail] = useState('');
 
-  useEffect(() => {
-    // filters change should trigger fetchProperties; fetchProperties itself is stable
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    fetchProperties();
-  }, [filters]);
-
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -50,7 +44,11 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;

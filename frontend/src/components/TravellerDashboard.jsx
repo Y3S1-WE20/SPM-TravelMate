@@ -17,7 +17,7 @@ const TravellerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [bookingFilter, _setBookingFilter] = useState('all');
+  const [bookingFilter] = useState('all');
 
   const fetchUserBookings = useCallback(async () => {
     const userId = user._id || user.id;
@@ -88,17 +88,7 @@ const TravellerDashboard = () => {
     }
   };
 
-  // helper to map booking status to a color (used in UI if needed)
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return '#ffc107';
-      case 'confirmed': return '#28a745';
-      case 'checked-in': return '#17a2b8';
-      case 'checked-out': return '#6c757d';
-      case 'cancelled': return '#dc3545';
-      default: return '#007bff';
-    }
-  };
+
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
