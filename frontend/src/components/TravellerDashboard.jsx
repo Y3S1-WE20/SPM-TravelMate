@@ -17,7 +17,7 @@ const TravellerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [bookingFilter, setBookingFilter] = useState('all');
+  const [bookingFilter, _setBookingFilter] = useState('all');
 
   useEffect(() => {
     if (!user) {
@@ -86,8 +86,8 @@ const TravellerDashboard = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
+  const _getStatusColor = (status) => {
+  switch (status) {
       case 'pending': return '#ffc107';
       case 'confirmed': return '#28a745';
       case 'checked-in': return '#17a2b8';

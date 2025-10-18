@@ -15,6 +15,7 @@ const MyReviews = () => {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       fetchMyReviews();
     }
   }, [user]);

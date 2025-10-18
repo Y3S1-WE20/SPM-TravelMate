@@ -15,6 +15,8 @@ const VehicleReserve = () => {
   const [totalCost, setTotalCost] = useState(0);
 
   useEffect(() => {
+    // intentionally only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     if (!vehicle) fetchVehicle();
   }, []);
 

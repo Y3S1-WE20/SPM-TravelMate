@@ -13,11 +13,14 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [bookingStats, setBookingStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [bookingFilter, setBookingFilter] = useState('all');
+  const [filter, _setFilter] = useState('all');
+  const [bookingFilter, _setBookingFilter] = useState('all');
   const [vehicleReservations, setVehicleReservations] = useState([]);
 
   useEffect(() => {
+    // Intentionally not including fetch functions in deps to avoid re-creating them;
+    // they are stable in this component's lifecycle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchProperties();
     fetchStats();
     if (activeTab === 'bookings') {

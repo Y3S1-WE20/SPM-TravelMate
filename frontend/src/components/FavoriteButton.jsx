@@ -7,6 +7,8 @@ const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Intentionally omit checkFavoriteStatus from deps — stable for this component
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     checkFavoriteStatus();
   }, [propertyId, user]);
 

@@ -15,8 +15,8 @@ const BookingPage = () => {
   const [bookingStep, setBookingStep] = useState(1);
   const [currentBookingId, setCurrentBookingId] = useState(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [sdkLoadFailed, setSdkLoadFailed] = useState(false);
-  const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [sdkLoadFailed, _setSdkLoadFailed] = useState(false);
+  const [sdkLoaded, _setSdkLoaded] = useState(false);
   
   // Availability Selection State
   const [availabilityData, setAvailabilityData] = useState({

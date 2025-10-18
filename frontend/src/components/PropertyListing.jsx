@@ -7,7 +7,7 @@ import PropertyDetailModal from './PropertyDetailModal';
 import './PropertyListing.css';
  
 // Import icons (you'll need to install react-icons: npm install react-icons)
-import { FaStar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaHeart, FaRegHeart, FaEye, FaFilter, FaSearch, FaChevronDown, FaChevronUp, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaArrowRight, FaArrowLeft, FaPlay, FaPause, FaQuoteLeft, FaQuoteRight, FaGlobe, FaShieldAlt, FaClock, FaPhone, FaEnvelope, FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaLinkedin, FaBed, FaCity, FaMoneyBillWave, FaHeadset } from 'react-icons/fa';
+import { FaBed, FaCity, FaMoneyBillWave } from 'react-icons/fa';
 import { MdCancel, MdApartment, MdHouse } from 'react-icons/md';
 import { IoIosPaper } from 'react-icons/io';
 
@@ -26,6 +26,8 @@ const HomePage = () => {
   const [email, setEmail] = useState('');
 
   useEffect(() => {
+    // filters change should trigger fetchProperties; fetchProperties itself is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchProperties();
   }, [filters]);
 
