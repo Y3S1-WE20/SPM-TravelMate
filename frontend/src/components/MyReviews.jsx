@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const MyReviews = () => {
@@ -13,14 +13,7 @@ const MyReviews = () => {
   });
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      fetchMyReviews();
-    }
-  }, [user]);
-
-  const fetchMyReviews = async () => {
+  const fetchMyReviews = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(`/api/reviews/user/${user._id}`);
@@ -30,7 +23,13 @@ const MyReviews = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchMyReviews();
+    }
+  }, [user, fetchMyReviews]);
 
   const handleEditClick = (review) => {
     setEditingReviewId(review._id);
