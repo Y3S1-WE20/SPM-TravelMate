@@ -7,7 +7,7 @@ import PropertyDetailModal from './PropertyDetailModal';
 import './PropertyListing.css';
  
 // Import icons (you'll need to install react-icons: npm install react-icons)
-import { FaBed, FaCity, FaMoneyBillWave } from 'react-icons/fa';
+import { FaBed, FaCity, FaMoneyBillWave, FaHeadset } from 'react-icons/fa';
 import { MdCancel, MdApartment, MdHouse } from 'react-icons/md';
 import { IoIosPaper } from 'react-icons/io';
 
