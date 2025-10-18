@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import './VehicleReserve.css';
@@ -14,13 +14,7 @@ const VehicleReserve = () => {
   const [totalDays, setTotalDays] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
 
-  useEffect(() => {
-    // intentionally only run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    if (!vehicle) fetchVehicle();
-  }, []);
-
-  const fetchVehicle = async () => {
+  const fetchVehicle = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get(`http://localhost:5001/api/vehicles/${id}`);
@@ -32,7 +26,13 @@ const VehicleReserve = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (!vehicle) fetchVehicle();
+  }, [fetchVehicle, vehicle]);
+
+  
 
   useEffect(() => {
     if (form.pickUpDate && form.dropOffDate && vehicle) {
