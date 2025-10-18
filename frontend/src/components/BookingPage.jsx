@@ -15,8 +15,6 @@ const BookingPage = () => {
   const [bookingStep, setBookingStep] = useState(1);
   const [currentBookingId, setCurrentBookingId] = useState(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [sdkLoadFailed, setSdkLoadFailed] = useState(false);
-  const [sdkLoaded, setSdkLoaded] = useState(false);
   
   // Availability Selection State
   const [availabilityData, setAvailabilityData] = useState({
@@ -67,8 +65,6 @@ const BookingPage = () => {
         if (typeof window !== 'undefined') {
           console.log('window.paypal available:', !!window.paypal);
           if (window.paypal) {
-            setSdkLoaded(true);
-            setSdkLoadFailed(false);
           } else {
             // Retry after a short delay
             setTimeout(checkSdk, 1000);
@@ -253,10 +249,6 @@ const BookingPage = () => {
     } catch (error) {
       console.error('Error creating PayPal order:', error);
       alert('Error creating payment order. Please try again.');
-      // if the SDK failed earlier mark it
-      if (error.response?.status === 503 || error.message?.includes('Network Error')) {
-        setSdkLoadFailed(true);
-      }
       throw error;
     }
   };

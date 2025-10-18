@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DashboardLayout from './DashboardLayout';
 import StatCard from './StatCard';
@@ -13,8 +13,8 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [bookingStats, setBookingStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [bookingFilter, setBookingFilter] = useState('all');
+  const [filter] = useState('all');
+  const [bookingFilter] = useState('all');
   const [vehicleReservations, setVehicleReservations] = useState([]);
 
   useEffect(() => {
@@ -27,9 +27,7 @@ const AdminDashboard = () => {
     if (activeTab === 'vehicles') {
       fetchVehicleReservations();
     }
-  }, [filter, bookingFilter, activeTab]);
-
-  const fetchProperties = async () => {
+  }, [filter, bookingFilter, activeTab, fetchProperties, fetchStats, fetchBookings, fetchBookingStats, fetchVehicleReservations]);  const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
       const statusFilter = filter === 'all' ? '' : filter;
@@ -40,18 +38,18 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await axios.get('http://localhost:5001/api/properties/stats/summary');
       setStats(response.data.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, []);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
       const statusFilter = bookingFilter === 'all' ? '' : bookingFilter;
@@ -62,27 +60,25 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingFilter]);
 
-  const fetchBookingStats = async () => {
+  const fetchBookingStats = useCallback(async () => {
     try {
       const response = await axios.get('http://localhost:5001/api/bookings/stats/summary');
       setBookingStats(response.data.data);
     } catch (error) {
       console.error('Error fetching booking stats:', error);
     }
-  };
+  }, []);
 
-  const fetchVehicleReservations = async () => {
+  const fetchVehicleReservations = useCallback(async () => {
     try {
       const res = await axios.get('http://localhost:5001/api/vehicles/reservations/all');
       if (res.data.success) setVehicleReservations(res.data.reservations);
     } catch (err) {
       console.error('Error fetching vehicle reservations', err);
     }
-  };
-
-  const handleStatusUpdate = async (propertyId, status, notes = '') => {
+  }, []);  const handleStatusUpdate = async (propertyId, status, notes = '') => {
     try {
       await axios.patch(`http://localhost:5001/api/properties/${propertyId}/status`, {
         status,

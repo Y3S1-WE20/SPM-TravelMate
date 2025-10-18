@@ -133,7 +133,7 @@ const AddPropertyForm = () => {
         submitData.append('images', image);
       });
 
-      const response = await axios.post('http://localhost:5001/api/properties', submitData, {
+      await axios.post('http://localhost:5001/api/properties', submitData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

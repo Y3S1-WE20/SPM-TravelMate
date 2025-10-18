@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
@@ -7,7 +7,7 @@ import PropertyDetailModal from './PropertyDetailModal';
 import './PropertyListing.css';
  
 // Import icons (you'll need to install react-icons: npm install react-icons)
-import { FaStar, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaHeart, FaRegHeart, FaEye, FaFilter, FaSearch, FaChevronDown, FaChevronUp, FaTimes, FaCheck, FaExclamationTriangle, FaInfoCircle, FaArrowRight, FaArrowLeft, FaPlay, FaPause, FaQuoteLeft, FaQuoteRight, FaGlobe, FaShieldAlt, FaClock, FaPhone, FaEnvelope, FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaLinkedin, FaBed, FaCity, FaMoneyBillWave, FaHeadset } from 'react-icons/fa';
+import { FaBed, FaCity, FaMoneyBillWave, FaHeadset } from 'react-icons/fa';
 import { MdCancel, MdApartment, MdHouse } from 'react-icons/md';
 import { IoIosPaper } from 'react-icons/io';
 
@@ -25,11 +25,7 @@ const HomePage = () => {
   });
   const [email, setEmail] = useState('');
 
-  useEffect(() => {
-    fetchProperties();
-  }, [filters]);
-
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -48,7 +44,11 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -548,30 +548,30 @@ const HomePage = () => {
           <div className="footer-section">
             <h4>Discover</h4>
             <ul>
-              <li><a href="#">Hotels</a></li>
-              <li><a href="#">Apartments</a></li>
-              <li><a href="#">Vacation Rentals</a></li>
-              <li><a href="#">Experiences</a></li>
+              <li><button>Hotels</button></li>
+              <li><button>Apartments</button></li>
+              <li><button>Vacation Rentals</button></li>
+              <li><button>Experiences</button></li>
             </ul>
           </div>
           
           <div className="footer-section">
             <h4>About</h4>
             <ul>
-              <li><a href="#">About Us</a></li>
-              <li><a href="#">How it works</a></li>
-              <li><a href="#">Careers</a></li>
-              <li><a href="#">Press</a></li>
+              <li><button>About Us</button></li>
+              <li><button>How it works</button></li>
+              <li><button>Careers</button></li>
+              <li><button>Press</button></li>
             </ul>
           </div>
           
           <div className="footer-section">
             <h4>Support</h4>
             <ul>
-              <li><a href="#">Help Center</a></li>
-              <li><a href="#">Contact Us</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="#">Terms of Service</a></li>
+              <li><button>Help Center</button></li>
+              <li><button>Contact Us</button></li>
+              <li><button>Privacy Policy</button></li>
+              <li><button>Terms of Service</button></li>
             </ul>
           </div>
         </div>

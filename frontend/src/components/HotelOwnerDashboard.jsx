@@ -16,7 +16,7 @@ const HotelOwnerDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [bookingFilter, setBookingFilter] = useState('all');
+  const [bookingFilter] = useState('all');
 
   const handleLogout = () => {
     logout();

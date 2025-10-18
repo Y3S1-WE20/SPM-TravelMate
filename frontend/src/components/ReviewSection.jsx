@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const ReviewSection = ({ propertyId }) => {
@@ -15,30 +15,31 @@ const ReviewSection = ({ propertyId }) => {
   });
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  useEffect(() => {
-    fetchReviews();
-    fetchReviewStats();
-  }, [propertyId]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const response = await api.get(`/api/reviews/property/${propertyId}?limit=10`);
       setReviews(response.data.data || []);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      setReviews([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, propertyId]);
 
-  const fetchReviewStats = async () => {
+  const fetchReviewStats = useCallback(async () => {
     try {
       const response = await api.get(`/api/reviews/stats/${propertyId}`);
       setReviewStats(response.data.data);
     } catch (error) {
       console.error('Error fetching review stats:', error);
     }
-  };
+  }, [api, propertyId]);
+
+  useEffect(() => {
+    fetchReviews();
+    fetchReviewStats();
+  }, [propertyId, fetchReviews, fetchReviewStats]);
 
   const submitReview = async (e) => {
     e.preventDefault();
