@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import path from "path";
 import { fileURLToPath } from "url";
@@ -10,12 +10,12 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import vehicleRoutes from './routes/vehicleRoutes.js';
+import paymentRoutes from "./routes/paymentRoutes.js";
+
 
 // Get directory name in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-dotenv.config();
 
 const app = express();
 
@@ -46,6 +46,8 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use('/api/vehicles', vehicleRoutes);
+app.use("/api/payments", paymentRoutes);
+
 
 // Debug: list all registered routes (useful for troubleshooting 404s)
 const listRoutes = () => {
@@ -98,6 +100,12 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log('Routes mounted: /auth, /api/properties, /api/bookings, /api/users, /api/reviews');
+  console.log('Routes mounted: /auth, /api/properties, /api/bookings, /api/users, /api/reviews, /api/payments');
+  console.log('PayPal Configuration:');
+  console.log(`  - Mode: ${process.env.PAYPAL_MODE || 'NOT SET'}`);
+  console.log(`  - Client ID: ${process.env.PAYPAL_CLIENT_ID ? process.env.PAYPAL_CLIENT_ID.substring(0, 10) + '...' : 'NOT SET'}`);
+  console.log(`  - Client Secret: ${process.env.PAYPAL_CLIENT_SECRET ? '***' + process.env.PAYPAL_CLIENT_SECRET.substring(process.env.PAYPAL_CLIENT_SECRET.length - 4) : 'NOT SET'}`);
+  console.log(`  - API Base: ${process.env.PAYPAL_MODE === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com'}`);
+  console.log('PayPal payment integration: ENABLED');
 });
 

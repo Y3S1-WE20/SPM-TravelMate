@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AddPropertyForm from '../components/AddPropertyForm';
 import ProfileSettings from '../components/ProfileSettings';
+import MyReviews from '../components/MyReviews';
 
 function Dashboard() {
   const { user, logout, api } = useAuth();
@@ -209,6 +210,20 @@ function Dashboard() {
             }}
           >
             My Favorites ({favorites.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            style={{
+              padding: '15px 25px',
+              border: 'none',
+              background: activeTab === 'reviews' ? '#007bff' : 'transparent',
+              color: activeTab === 'reviews' ? 'white' : '#333',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}
+          >
+            ⭐ My Reviews
           </button>
           {user.role === 'hotel owner' && (
             <button
@@ -730,6 +745,11 @@ function Dashboard() {
             </div>
           )}
         </div>
+      )}
+
+      {/* My Reviews Tab */}
+      {activeTab === 'reviews' && (
+        <MyReviews />
       )}
 
       {/* Hotel Owner Properties Tab */}
