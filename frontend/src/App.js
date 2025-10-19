@@ -71,6 +71,9 @@ function App() {
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <footer style={{ textAlign: 'center', padding: '20px', fontSize: '12px', color: '#666' }}>
+            <a href="https://reactjs.org">Learn React</a>
+          </footer>
         </div>
       </Router>
     </AuthProvider>

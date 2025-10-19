@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DashboardLayout from './DashboardLayout';
 import StatCard from './StatCard';
@@ -13,9 +13,62 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [bookingStats, setBookingStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [bookingFilter, setBookingFilter] = useState('all');
+  const [filter] = useState('all');
+  const [bookingFilter] = useState('all');
   const [vehicleReservations, setVehicleReservations] = useState([]);
+
+  const fetchProperties = useCallback(async () => {
+    try {
+      setLoading(true);
+      const statusFilter = filter === 'all' ? '' : filter;
+      const response = await axios.get(`http://localhost:5001/api/properties?status=${statusFilter}`);
+      setProperties(response.data.data);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/properties/stats/summary');
+      setStats(response.data.data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  }, []);
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const statusFilter = bookingFilter === 'all' ? '' : bookingFilter;
+      const response = await axios.get(`http://localhost:5001/api/bookings?status=${statusFilter}&limit=50`);
+      setBookings(response.data.data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingFilter]);
+
+  const fetchBookingStats = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/bookings/stats/summary');
+      setBookingStats(response.data.data);
+    } catch (error) {
+      console.error('Error fetching booking stats:', error);
+    }
+  }, []);
+
+  const fetchVehicleReservations = useCallback(async () => {
+    try {
+      const res = await axios.get('http://localhost:5001/api/vehicles/reservations/all');
+      if (res.data.success) setVehicleReservations(res.data.reservations);
+    } catch (err) {
+      console.error('Error fetching vehicle reservations', err);
+    }
+  }, []);
 
   useEffect(() => {
     fetchProperties();
@@ -27,71 +80,27 @@ const AdminDashboard = () => {
     if (activeTab === 'vehicles') {
       fetchVehicleReservations();
     }
-  }, [filter, bookingFilter, activeTab]);
+  }, [activeTab, fetchProperties, fetchStats, fetchBookings, fetchBookingStats, fetchVehicleReservations]);
 
-  const fetchProperties = async () => {
+  const handleDeleteBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to delete this booking?')) return;
     try {
-      setLoading(true);
-      const statusFilter = filter === 'all' ? '' : filter;
-      const response = await axios.get(`http://localhost:5001/api/properties?status=${statusFilter}`);
-      setProperties(response.data.data);
+      await axios.delete(`http://localhost:5001/api/bookings/${bookingId}`);
+      fetchBookings();
+      fetchBookingStats();
+      alert('Booking deleted successfully');
     } catch (error) {
-      console.error('Error fetching properties:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error deleting booking:', error);
+      alert('Failed to delete booking');
     }
   };
 
-  const fetchStats = async () => {
+  const handleStatusUpdate = async (propertyId, status) => {
     try {
-      const response = await axios.get('http://localhost:5001/api/properties/stats/summary');
-      setStats(response.data.data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      const statusFilter = bookingFilter === 'all' ? '' : bookingFilter;
-      const response = await axios.get(`http://localhost:5001/api/bookings?status=${statusFilter}&limit=50`);
-      setBookings(response.data.data);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBookingStats = async () => {
-    try {
-      const response = await axios.get('http://localhost:5001/api/bookings/stats/summary');
-      setBookingStats(response.data.data);
-    } catch (error) {
-      console.error('Error fetching booking stats:', error);
-    }
-  };
-
-  const fetchVehicleReservations = async () => {
-    try {
-      const res = await axios.get('http://localhost:5001/api/vehicles/reservations/all');
-      if (res.data.success) setVehicleReservations(res.data.reservations);
-    } catch (err) {
-      console.error('Error fetching vehicle reservations', err);
-    }
-  };
-
-  const handleStatusUpdate = async (propertyId, status, notes = '') => {
-    try {
-      await axios.patch(`http://localhost:5001/api/properties/${propertyId}/status`, {
-        status,
-        adminNotes: notes
-      });
-
-      // Refresh data
+      await axios.put(`http://localhost:5001/api/properties/${propertyId}/status`, { status });
       fetchProperties();
       fetchStats();
+      alert(`Property ${status} successfully`);
     } catch (error) {
       console.error('Error updating property status:', error);
       alert('Failed to update property status');
@@ -99,41 +108,27 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteProperty = async (propertyId) => {
-    const property = properties.find(p => p._id === propertyId);
-    const propertyTitle = property ? property.title : 'this property';
-
-    if (window.confirm(`Are you sure you want to permanently delete "${propertyTitle}"?\n\nThis action cannot be undone and will remove all associated data including images.`)) {
-      try {
-        await axios.delete(`http://localhost:5001/api/properties/${propertyId}`);
-        fetchProperties();
-        fetchStats();
-        alert('Property deleted successfully');
-      } catch (error) {
-        console.error('Error deleting property:', error);
-        alert('Failed to delete property: ' + (error.response?.data?.message || error.message));
-      }
+    if (!window.confirm('Are you sure you want to delete this property?')) return;
+    try {
+      await axios.delete(`http://localhost:5001/api/properties/${propertyId}`);
+      fetchProperties();
+      fetchStats();
+      alert('Property deleted successfully');
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      alert('Failed to delete property');
     }
   };
 
-  const handleBookingStatusUpdate = async (bookingId, newStatus) => {
+  const handleBookingStatusUpdate = async (bookingId, status) => {
     try {
-      await axios.patch(`http://localhost:5001/api/bookings/${bookingId}/status`, { status: newStatus });
-      await fetchBookings();
-      await fetchBookingStats();
+      await axios.put(`http://localhost:5001/api/bookings/${bookingId}/status`, { status });
+      fetchBookings();
+      fetchBookingStats();
+      alert(`Booking ${status} successfully`);
     } catch (error) {
       console.error('Error updating booking status:', error);
-    }
-  };
-
-  const handleDeleteBooking = async (bookingId) => {
-    if (window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
-      try {
-        await axios.delete(`http://localhost:5001/api/bookings/${bookingId}`);
-        await fetchBookings();
-        await fetchBookingStats();
-      } catch (error) {
-        console.error('Error deleting booking:', error);
-      }
+      alert('Failed to update booking status');
     }
   };
 

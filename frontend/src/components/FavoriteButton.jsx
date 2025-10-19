@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
@@ -6,13 +6,9 @@ const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    checkFavoriteStatus();
-  }, [propertyId, user]);
-
-  const checkFavoriteStatus = async () => {
+  const checkFavoriteStatus = useCallback(async () => {
     if (!user?._id || !propertyId) return;
-    
+
     try {
       const response = await api.get(`/api/users/${user._id}/favorites`);
       const favorites = response.data.data || [];
@@ -20,9 +16,11 @@ const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
-  };
+  }, [user, propertyId, api]);
 
-  const toggleFavorite = async () => {
+  useEffect(() => {
+    checkFavoriteStatus();
+  }, [propertyId, user, checkFavoriteStatus]);  const toggleFavorite = async () => {
     if (!user?._id) {
       alert('Please log in to add favorites');
       return;
