@@ -6,10 +6,6 @@ const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    checkFavoriteStatus();
-  }, [propertyId, user, checkFavoriteStatus]);
-
   const checkFavoriteStatus = useCallback(async () => {
     if (!user?._id || !propertyId) return;
 
@@ -20,7 +16,11 @@ const FavoriteButton = ({ propertyId, onFavoriteChange }) => {
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
-  }, [user, propertyId, api]);  const toggleFavorite = async () => {
+  }, [user, propertyId, api]);
+
+  useEffect(() => {
+    checkFavoriteStatus();
+  }, [propertyId, user, checkFavoriteStatus]);  const toggleFavorite = async () => {
     if (!user?._id) {
       alert('Please log in to add favorites');
       return;

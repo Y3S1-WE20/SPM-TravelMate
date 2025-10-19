@@ -17,17 +17,7 @@ const AdminDashboard = () => {
   const [bookingFilter] = useState('all');
   const [vehicleReservations, setVehicleReservations] = useState([]);
 
-  useEffect(() => {
-    fetchProperties();
-    fetchStats();
-    if (activeTab === 'bookings') {
-      fetchBookings();
-      fetchBookingStats();
-    }
-    if (activeTab === 'vehicles') {
-      fetchVehicleReservations();
-    }
-  }, [filter, bookingFilter, activeTab, fetchProperties, fetchStats, fetchBookings, fetchBookingStats, fetchVehicleReservations]);  const fetchProperties = useCallback(async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
       const statusFilter = filter === 'all' ? '' : filter;
@@ -78,16 +68,39 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('Error fetching vehicle reservations', err);
     }
-  }, []);  const handleStatusUpdate = async (propertyId, status, notes = '') => {
-    try {
-      await axios.patch(`http://localhost:5001/api/properties/${propertyId}/status`, {
-        status,
-        adminNotes: notes
-      });
+  }, []);
 
-      // Refresh data
+  useEffect(() => {
+    fetchProperties();
+    fetchStats();
+    if (activeTab === 'bookings') {
+      fetchBookings();
+      fetchBookingStats();
+    }
+    if (activeTab === 'vehicles') {
+      fetchVehicleReservations();
+    }
+  }, [activeTab, fetchProperties, fetchStats, fetchBookings, fetchBookingStats, fetchVehicleReservations]);
+
+  const handleDeleteBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to delete this booking?')) return;
+    try {
+      await axios.delete(`http://localhost:5001/api/bookings/${bookingId}`);
+      fetchBookings();
+      fetchBookingStats();
+      alert('Booking deleted successfully');
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      alert('Failed to delete booking');
+    }
+  };
+
+  const handleStatusUpdate = async (propertyId, status) => {
+    try {
+      await axios.put(`http://localhost:5001/api/properties/${propertyId}/status`, { status });
       fetchProperties();
       fetchStats();
+      alert(`Property ${status} successfully`);
     } catch (error) {
       console.error('Error updating property status:', error);
       alert('Failed to update property status');
@@ -95,41 +108,27 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteProperty = async (propertyId) => {
-    const property = properties.find(p => p._id === propertyId);
-    const propertyTitle = property ? property.title : 'this property';
-
-    if (window.confirm(`Are you sure you want to permanently delete "${propertyTitle}"?\n\nThis action cannot be undone and will remove all associated data including images.`)) {
-      try {
-        await axios.delete(`http://localhost:5001/api/properties/${propertyId}`);
-        fetchProperties();
-        fetchStats();
-        alert('Property deleted successfully');
-      } catch (error) {
-        console.error('Error deleting property:', error);
-        alert('Failed to delete property: ' + (error.response?.data?.message || error.message));
-      }
+    if (!window.confirm('Are you sure you want to delete this property?')) return;
+    try {
+      await axios.delete(`http://localhost:5001/api/properties/${propertyId}`);
+      fetchProperties();
+      fetchStats();
+      alert('Property deleted successfully');
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      alert('Failed to delete property');
     }
   };
 
-  const handleBookingStatusUpdate = async (bookingId, newStatus) => {
+  const handleBookingStatusUpdate = async (bookingId, status) => {
     try {
-      await axios.patch(`http://localhost:5001/api/bookings/${bookingId}/status`, { status: newStatus });
-      await fetchBookings();
-      await fetchBookingStats();
+      await axios.put(`http://localhost:5001/api/bookings/${bookingId}/status`, { status });
+      fetchBookings();
+      fetchBookingStats();
+      alert(`Booking ${status} successfully`);
     } catch (error) {
       console.error('Error updating booking status:', error);
-    }
-  };
-
-  const handleDeleteBooking = async (bookingId) => {
-    if (window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
-      try {
-        await axios.delete(`http://localhost:5001/api/bookings/${bookingId}`);
-        await fetchBookings();
-        await fetchBookingStats();
-      } catch (error) {
-        console.error('Error deleting booking:', error);
-      }
+      alert('Failed to update booking status');
     }
   };
 
