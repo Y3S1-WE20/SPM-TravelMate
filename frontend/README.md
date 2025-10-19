@@ -1,70 +1,134 @@
-# Getting Started with Create React App
+# TravelMate Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, responsive React application for the TravelMate travel booking platform.
 
-## Available Scripts
+## 🚀 Features
 
-In the project directory, you can run:
+- **Property Browsing & Booking** - Search, filter, and book accommodations
+- **Vehicle Rental System** - Reserve vehicles for travel
+- **User Authentication** - JWT-based login and registration
+- **Role-based Access** - Different dashboards for users, hotel owners, and admins
+- **PayPal Integration** - Secure payment processing
+- **Review System** - Rate and review properties
+- **Responsive Design** - Mobile-first approach with modern UI
+- **Real-time Updates** - Live booking status and availability
 
-### `npm start`
+## 🛠️ Technology Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **React 19** - Latest React with modern hooks
+- **React Router DOM** - Client-side routing
+- **Axios** - HTTP client for API communication
+- **Framer Motion** - Smooth animations and transitions
+- **PayPal React SDK** - Payment integration
+- **React Icons & Lucide React** - Icon libraries
+- **CSS3** - Custom responsive styling
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 📦 Installation
 
-### `npm test`
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Y3S1-WE20/SPM-TravelMate.git
+   cd SPM-TravelMate/frontend
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### `npm run build`
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+   Configure your `.env` file:
+   ```env
+   REACT_APP_API_URL=http://localhost:5001
+   REACT_APP_PAYPAL_CLIENT_ID=your-paypal-sandbox-client-id
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+4. **Start the development server**
+   ```bash
+   npm start
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+   The app will be available at [http://localhost:3000](http://localhost:3000)
 
-### `npm run eject`
+## 🧪 Testing
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+npm test
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Launches the test runner in interactive watch mode.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🚀 Build for Production
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+npm run build
+```
 
-## Learn More
+Builds the app for production to the `build` folder.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 📱 User Roles
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Traveler
+- Browse and search properties
+- Book accommodations and vehicles
+- Make secure payments
+- Leave reviews and ratings
+- View booking history
 
-### Code Splitting
+### Hotel Owner
+- List and manage properties
+- Upload property images
+- View bookings and earnings
+- Manage booking statuses
+- Access analytics dashboard
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Administrator
+- Full system access
+- User and content moderation
+- Approve/reject properties
+- System-wide analytics
+- Manage all bookings
 
-### Analyzing the Bundle Size
+## 🎨 UI Components
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+The application includes various reusable components:
 
-### Making a Progressive Web App
+- **PropertyCard** - Property listing display
+- **BookingPage** - Booking interface
+- **AdminDashboard** - Administrative controls
+- **Header** - Navigation component
+- **AuthContext** - Authentication state management
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 🔧 Development Scripts
 
-### Advanced Configuration
+- `npm start` - Start development server
+- `npm test` - Run test suite
+- `npm run build` - Create production build
+- `npm run eject` - Eject from Create React App (irreversible)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🌐 Deployment
 
-### Deployment
+The frontend is deployed on **Vercel** with automatic deployments from the main branch.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+**Live URL:** [https://your-app-url.vercel.app](https://your-app-url.vercel.app)
 
-### `npm run build` fails to minify
+## 🤝 Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Follow the existing code style
+2. Add tests for new features
+3. Ensure responsive design
+4. Test across different browsers
+5. Follow React best practices
+
+## 📚 Related Projects
+
+- **Backend API** - [Backend Repository](../backend)
+- **Full Documentation** - [Main README](../README.md)
+
+---
+
+*Part of the TravelMate platform - Built with React & ❤️*
